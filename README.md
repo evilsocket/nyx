@@ -10,7 +10,7 @@ Nyx (goddess of the night in Greek mythology) is a self-contained script for cle
 
 ## Features
 
-The following table details exactly which forensic artifacts are cleaned by each module:
+The following table details which artifacts are cleaned by each module:
 
 | OS | Module | Artifacts |
 |---|---|---|
