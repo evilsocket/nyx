@@ -6,29 +6,34 @@ Nyx (goddess of the night in Greek mythology) is a self-contained script for cle
 
 ## Features
 
-### Linux
-- `shell` - Shell history files (.bash_history, .zsh_history, etc.)
-- `logs` - System logs (/var/log/*)
-- `audit` - Audit logs (auditd)
-- `temp` - Temporary files, trash directories, core dumps
-- `network` - Network traces (ARP cache, NetworkManager)
-- `user` - User traces (thumbnails, GNOME Tracker, Zeitgeist)
+The following table details exactly which forensic artifacts are cleaned by each module:
 
-### macOS
-- `shell` - Shell history files
-- `macos` - macOS specific traces (.DS_Store, Spotlight, system logs, appfirewall.log)
-- `audit` - Audit (BSM) logs (/var/audit/*)
-- `browser` - Safari history and cache
-- `unified` - Unified logs (10.12+)
-- `fileevents` - FSEvents and quarantine database
-- `usage` - App usage traces (KnowledgeC, notifications)
-
-### Windows
-- `events` - Windows Event Logs (including Sysmon, WinRM)
-- `history` - PowerShell/CMD history, prefetch, jump lists
-- `registry` - Registry MRUs, USB history, BAM, ShellBags, UserAssist
-- `filesystem` - USN journal, recycle bin, thumbcache
-- `temp` - Temporary files, DNS cache, shadow copies, WER archives, crash dumps
+| OS | Module | Artifacts |
+|---|---|---|
+| **Linux** | `shell` | Shell history files (bash, zsh, python, mysql, etc.), command histories, recently used files |
+| **Linux** | `logs` | System logs (auth, syslog, kernel, boot, package managers), web server logs, journald |
+| **Linux** | `audit` | Audit logs, search logs, in-kernel audit rules |
+| **Linux** | `temp` | Scripts in temp dirs, hidden files, thumbnail caches, core dumps, crash reports, trash |
+| **Linux** | `network` | ARP cache, NetworkManager connections, DHCP leases, coredump logs |
+| **Linux** | `user` | Login records, thumbnails, GTK bookmarks, GNOME Tracker, Zeitgeist, editor traces (VS Code, JetBrains) |
+| **Linux** | `package` | Package caches and logs (APT, YUM, DNF, Pacman) |
+| **Linux** | `browser` | Firefox (cache, storage, databases), Chrome/Chromium (history, cookies, cache) |
+| **Linux** | `ssh` | SSH known_hosts, connection logs, auth log entries |
+| **Linux** | `container` | Docker logs/config, Podman/K8s overlays, libvirt/QEMU logs |
+| **Linux** | `systemd` | Random seed, live session journals |
+| **Linux** | `print` | CUPS job history and logs |
+| **macOS** | `shell` | Shell history files (same as Linux) |
+| **macOS** | `macos` | .DS_Store files, user trash, Spotlight indexes, QuickLook thumbnails, system logs |
+| **macOS** | `audit` | BSM audit trail |
+| **macOS** | `browser` | Safari history and cache |
+| **macOS** | `unified` | Unified logs (10.12+), diagnostics, log archives |
+| **macOS** | `fileevents` | FSEvents, quarantine databases |
+| **macOS** | `usage` | KnowledgeC database, Notification Center, recent items |
+| **Windows** | `events` | Event logs (Security, System, Application, Sysmon, WinRM) |
+| **Windows** | `history` | PowerShell/CMD history, prefetch, jump lists, recent documents |
+| **Windows** | `registry` | Registry MRUs, USB history, BAM/DAM, ShellBags, UserAssist |
+| **Windows** | `filesystem` | USN journal, recycle bin, thumbcache, shortcuts, index files |
+| **Windows** | `temp` | Temp files, DNS cache, shadow copies, WER archives, crash dumps |
 
 ## Quick Start
 

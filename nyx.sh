@@ -59,7 +59,6 @@ log_message() {
 print_banner() {
     echo "${BLUE}================================================${NC}"
     echo "${BLUE}              Nyx v${VERSION}${NC}"
-    echo "${BLUE}      Anti-Forensics Trace Cleaner${NC}"
     echo "${BLUE}================================================${NC}"
     echo ""
     log_message "Nyx v${VERSION} started"
