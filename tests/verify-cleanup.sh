@@ -308,6 +308,220 @@ fi
 ARP_COUNT=$(ip neigh show 2>/dev/null | grep -v FAILED | wc -l || arp -a 2>/dev/null | wc -l || echo "0")
 pass "ARP cache checked (current entries: $ARP_COUNT)"
 
+echo ""
+echo "[*] Checking extended module artifacts..."
+
+# Package Manager Artifacts
+echo ""
+echo "[*] Checking package manager artifacts..."
+
+# APT/DPKG artifacts
+check_not_exists /var/cache/apt/archives/malicious-tool_1.0_amd64.deb "APT malicious tool cache"
+check_not_exists /var/cache/apt/archives/nmap_7.80_amd64.deb "APT nmap cache"
+check_log_no_marker /var/log/apt/history.log "netcat-openbsd" "APT history log"
+check_log_no_marker /var/log/apt/term.log "hydra" "APT term log"
+check_log_no_marker /var/log/dpkg.log "john" "DPKG log"
+
+# YUM/DNF artifacts
+check_not_exists /var/cache/yum/x86_64/7/base/suspicious-tool-1.0-1.x86_64.rpm "YUM suspicious tool cache"
+check_not_exists /var/cache/dnf/fedora/packages/ncat-7.70-1.fc30.x86_64.rpm "DNF ncat cache"
+check_log_no_marker /var/log/yum.log "nmap-7.70" "YUM log"
+check_log_no_marker /var/log/dnf.log "hydra-9.0" "DNF log"
+
+# Pacman artifacts
+check_not_exists /var/cache/pacman/pkg/nmap-7.80-1-x86_64.pkg.tar.xz "Pacman nmap cache"
+check_not_exists /var/cache/pacman/pkg/john-1.9.0-1-x86_64.pkg.tar.xz "Pacman john cache"
+check_log_no_marker /var/log/pacman.log "installed nmap" "Pacman log"
+
+# Container/VM Artifacts
+echo ""
+echo "[*] Checking container/VM artifacts..."
+
+# Docker artifacts
+check_empty /var/lib/docker/containers/abc123def456/abc123def456-json.log "Docker container log 1"
+check_empty /var/lib/docker/containers/def456ghi789/def456ghi789-json.log "Docker container log 2"
+check_not_exists ~/.docker/config.json "Docker user config"
+check_not_exists ~/.docker/machine/machines/evil-host/config.json "Docker machine config"
+
+# Podman/K8s artifacts
+check_not_exists /var/lib/containers/storage/overlay/123abc/userdata/suspicious-mount.json "Podman overlay userdata"
+check_empty /var/log/pods/kube-system_malicious-pod_abc123/container.log "K8s pod log"
+
+# Libvirt/QEMU artifacts
+check_empty /var/log/libvirt/qemu/evil-vm.log "Libvirt QEMU log"
+check_not_exists /var/cache/libvirt/qemu/capabilities.xml "Libvirt cache capabilities"
+check_not_exists /var/cache/libvirt/qemu/evil-vm.xml "Libvirt cache VM metadata"
+
+# Browser Artifacts  
+echo ""
+echo "[*] Checking browser artifacts..."
+
+# Firefox artifacts
+check_not_exists ~/.mozilla/firefox/profile.default-release/cache2/entries/evil-site-cache "Firefox cache entry"
+check_not_exists ~/.mozilla/firefox/profile.default-release/storage/default/evil-site-storage "Firefox storage data"
+check_not_exists ~/.mozilla/firefox/profile.default-release/thumbnails/evil-thumbnail.jpg "Firefox thumbnail"
+check_not_exists ~/.mozilla/firefox/profile.default-release/sessionstore-backups/recovery.jsonlz4 "Firefox session backup"
+
+# Firefox SQLite databases
+if command -v sqlite3 >/dev/null 2>&1; then
+    if [ -f ~/.mozilla/firefox/profile.default-release/places.sqlite ]; then
+        PLACES_COUNT=$(sqlite3 ~/.mozilla/firefox/profile.default-release/places.sqlite "SELECT COUNT(*) FROM moz_places WHERE url LIKE '%evil%';" 2>/dev/null || echo "0")
+        if [ "$PLACES_COUNT" -eq 0 ]; then
+            pass "Firefox places database cleaned"
+        else
+            fail "Firefox places database" "No evil URLs" "Found $PLACES_COUNT evil URLs"
+        fi
+    else
+        pass "Firefox places database - File removed"
+    fi
+    
+    if [ -f ~/.mozilla/firefox/profile.default-release/cookies.sqlite ]; then
+        COOKIES_COUNT=$(sqlite3 ~/.mozilla/firefox/profile.default-release/cookies.sqlite "SELECT COUNT(*) FROM moz_cookies WHERE host LIKE '%evil%';" 2>/dev/null || echo "0")
+        if [ "$COOKIES_COUNT" -eq 0 ]; then
+            pass "Firefox cookies database cleaned"
+        else
+            fail "Firefox cookies database" "No evil cookies" "Found $COOKIES_COUNT evil cookies"
+        fi
+    else
+        pass "Firefox cookies database - File removed"
+    fi
+else
+    check_not_exists ~/.mozilla/firefox/profile.default-release/places.sqlite "Firefox places database"
+    check_not_exists ~/.mozilla/firefox/profile.default-release/cookies.sqlite "Firefox cookies database"
+fi
+
+check_not_exists ~/.mozilla/firefox/profile.default-release/formhistory.sqlite "Firefox form history database"
+
+# Chrome/Chromium artifacts
+check_not_exists ~/.config/google-chrome/Default/Cache/evil-cache-entry "Chrome cache entry"
+check_not_exists ~/.config/google-chrome/Default/History "Chrome history"
+check_not_exists ~/.config/google-chrome/Default/Cookies "Chrome cookies"
+check_not_exists ~/.config/google-chrome/Default/Web\ Data "Chrome web data"
+check_not_exists ~/.config/google-chrome/Default/Top\ Sites "Chrome top sites"
+
+check_not_exists ~/.config/chromium/Default/Cache/evil-cache-entry "Chromium cache entry"
+check_not_exists ~/.config/chromium/Default/History "Chromium history"
+check_not_exists ~/.config/chromium/Default/Cookies "Chromium cookies"
+check_not_exists ~/.config/chromium/Default/Web\ Data "Chromium web data"
+check_not_exists ~/.config/chromium/Default/Top\ Sites "Chromium top sites"
+
+# SSH Artifacts
+echo ""
+echo "[*] Checking SSH artifacts..."
+
+# SSH user artifacts
+check_empty ~/.ssh/known_hosts "SSH known_hosts"
+check_not_exists ~/.ssh/connection.log "SSH connection log"
+check_not_exists ~/.ssh/debug.log "SSH debug log"
+
+# System SSH logs - check that SSH entries were removed
+for log in /var/log/auth.log /var/log/secure; do
+    if [ -f "$log" ]; then
+        SSH_COUNT=$(sudo grep -c "sshd\[" "$log" 2>/dev/null | head -1 || echo "0")
+        # Ensure SSH_COUNT is a clean integer
+        SSH_COUNT=$(echo "$SSH_COUNT" | tr -d '\n' | grep -o '[0-9]*' | head -1)
+        [ -z "$SSH_COUNT" ] && SSH_COUNT=0
+        
+        if [ "$SSH_COUNT" -eq 0 ]; then
+            pass "SSH entries removed from $(basename "$log")"
+        else
+            fail "SSH entries in $(basename "$log")" "No SSH entries" "Found $SSH_COUNT SSH entries"
+        fi
+    else
+        pass "SSH log $(basename "$log") - File removed"
+    fi
+done
+
+# Additional Systemd Artifacts
+echo ""
+echo "[*] Checking additional systemd artifacts..."
+
+check_not_exists /var/lib/systemd/random-seed "systemd random seed"
+check_not_exists /run/log/journal/abc123def456/system.journal "systemd live session journal"
+check_not_exists /run/log/journal/abc123def456/user-1000.journal "systemd live session user journal"
+
+# Print Subsystem Artifacts
+echo ""
+echo "[*] Checking print subsystem artifacts..."
+
+# CUPS artifacts
+check_not_exists /var/spool/cups/c00001 "CUPS print job 1"
+check_not_exists /var/spool/cups/c00002 "CUPS print job 2"
+check_not_exists /var/spool/cups/c00003 "CUPS print job 3"
+
+check_empty /var/log/cups/access_log "CUPS access log"
+check_empty /var/log/cups/error_log "CUPS error log"
+check_empty /var/log/cups/page_log "CUPS page log"
+
+# Additional Forensic Artifacts
+echo ""
+echo "[*] Checking additional forensic artifacts..."
+
+# DHCP leases
+check_not_exists /var/lib/dhclient/dhclient.eth0.leases "DHCP leases"
+
+# GTK bookmarks
+check_empty ~/.config/gtk-3.0/bookmarks "GTK bookmarks"
+
+# Recently used files
+if [ -f ~/.local/share/recently-used.xbel ]; then
+    RECENT_COUNT=$(grep -c "suspicious\|payload\|malware" ~/.local/share/recently-used.xbel 2>/dev/null | head -1 || echo "0")
+    # Ensure RECENT_COUNT is a clean integer
+    RECENT_COUNT=$(echo "$RECENT_COUNT" | tr -d '\n' | grep -o '[0-9]*' | head -1)
+    [ -z "$RECENT_COUNT" ] && RECENT_COUNT=0
+    
+    if [ "$RECENT_COUNT" -eq 0 ]; then
+        pass "Recently used files cleaned"
+    else
+        fail "Recently used files" "No suspicious entries" "Found $RECENT_COUNT suspicious entries"
+    fi
+else
+    pass "Recently used files - File removed"
+fi
+
+# Crash dumps
+check_not_exists /var/crash/core.suspicious-binary.12345.gz "Crash dump"
+check_not_exists /var/crash/_usr_bin_evil-tool.12345.crash "Crash report"
+
+# VS Code/Editor traces
+check_not_exists ~/.local/share/code-server/User/settings.json "VS Code server settings"
+check_not_exists ~/.config/Code/User/settings.json "VS Code user settings"
+
+# JetBrains traces
+check_empty ~/.local/share/.IntelliJIdea2023.1/system/log/idea.log "JetBrains IDE log"
+
+# Extended Verification Summary
+echo ""
+echo "[*] Extended verification complete..."
+
+# Count additional extended artifacts that should be cleaned
+EXTENDED_ARTIFACTS=0
+
+# Package manager artifacts
+[ -f /var/cache/apt/archives/malicious-tool_1.0_amd64.deb ] && EXTENDED_ARTIFACTS=$((EXTENDED_ARTIFACTS + 1))
+[ -f /var/cache/yum/x86_64/7/base/suspicious-tool-1.0-1.x86_64.rpm ] && EXTENDED_ARTIFACTS=$((EXTENDED_ARTIFACTS + 1))
+[ -f /var/cache/pacman/pkg/nmap-7.80-1-x86_64.pkg.tar.xz ] && EXTENDED_ARTIFACTS=$((EXTENDED_ARTIFACTS + 1))
+
+# Container artifacts
+[ -s /var/lib/docker/containers/abc123def456/abc123def456-json.log ] && EXTENDED_ARTIFACTS=$((EXTENDED_ARTIFACTS + 1))
+[ -f ~/.docker/config.json ] && EXTENDED_ARTIFACTS=$((EXTENDED_ARTIFACTS + 1))
+
+# Browser artifacts
+[ -f ~/.mozilla/firefox/profile.default-release/places.sqlite ] && EXTENDED_ARTIFACTS=$((EXTENDED_ARTIFACTS + 1))
+[ -f ~/.config/google-chrome/Default/History ] && EXTENDED_ARTIFACTS=$((EXTENDED_ARTIFACTS + 1))
+
+# SSH artifacts  
+[ -s ~/.ssh/known_hosts ] && EXTENDED_ARTIFACTS=$((EXTENDED_ARTIFACTS + 1))
+
+# Print artifacts
+[ -f /var/spool/cups/c00001 ] && EXTENDED_ARTIFACTS=$((EXTENDED_ARTIFACTS + 1))
+
+if [ "$EXTENDED_ARTIFACTS" -eq 0 ]; then
+    pass "Extended modules verification - All artifacts cleaned"
+else
+    fail "Extended modules verification" "All extended artifacts cleaned" "$EXTENDED_ARTIFACTS extended artifacts remain"
+fi
+
 # Final summary
 echo ""
 echo "================================"

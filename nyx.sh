@@ -382,10 +382,10 @@ clean_linux_temp_files() {
         fi
     fi
     
-    # Clean core dumps in safe locations
+    # Clean core dumps and crash reports in safe locations
     for dir in /tmp /var/crash; do
         if [ -d "$dir" ]; then
-            find "$dir" -name "core*" -type f -delete 2>/dev/null || true
+            find "$dir" \( -name "core*" -o -name "*.crash" -o -name "*crash*" \) -type f -delete 2>/dev/null || true
             count=$((count + 1))
         fi
     done
@@ -478,6 +478,14 @@ clean_linux_network_traces() {
         count=$((count + 1))
     fi
     
+    # Clean DHCP leases
+    for dhcp_lease in /var/lib/dhclient/*.leases /var/lib/dhcp/*.leases; do
+        if safe_remove "$dhcp_lease"; then
+            count=$((count + 1))
+            print_verbose "Cleaned DHCP lease: $dhcp_lease"
+        fi
+    done
+    
     CLEANED_COUNT=$((CLEANED_COUNT + count))
     print_success "Network traces cleaned ($count items)"
 }
@@ -507,6 +515,12 @@ clean_linux_user_traces() {
                 print_verbose "Cleaned: $home/.thumbnails"
             fi
             
+            # GTK bookmarks
+            if truncate_file "$home/.config/gtk-3.0/bookmarks"; then
+                count=$((count + 1))
+                print_verbose "Cleaned GTK bookmarks: $home"
+            fi
+            
             # GNOME Tracker-3 Databases
             if [ "$DRY_RUN" -eq 0 ]; then
                 rm -rf "$home/.cache/tracker"* 2>/dev/null || true
@@ -525,6 +539,26 @@ clean_linux_user_traces() {
                 count=$((count + 1))
                 print_verbose "Cleaned Zeitgeist logs: $home/.local/share/zeitgeist"
             fi
+            
+            # Editor/IDE traces
+            for editor_path in "$home/.local/share/code-server/User" "$home/.config/Code/User" "$home/.local/share/code/Backups"; do
+                if safe_remove_tree "$editor_path"; then
+                    count=$((count + 1))
+                    print_verbose "Cleaned editor traces: $editor_path"
+                fi
+            done
+            
+            # JetBrains IDE logs (handle wildcard expansion)
+            for intellij_dir in "$home/.local/share/.IntelliJIdea"*; do
+                if [ -d "$intellij_dir/system/log" ]; then
+                    for log_file in "$intellij_dir/system/log/"*; do
+                        if truncate_file "$log_file"; then
+                            count=$((count + 1))
+                            print_verbose "Cleaned JetBrains log: $log_file"
+                        fi
+                    done
+                fi
+            done
         done
     else
         # Clean current user's old thumbnails
@@ -534,6 +568,12 @@ clean_linux_user_traces() {
             fi
             count=$((count + 1))
             print_verbose "Cleaned: $HOME/.thumbnails"
+        fi
+        
+        # GTK bookmarks (current user)
+        if truncate_file "$HOME/.config/gtk-3.0/bookmarks"; then
+            count=$((count + 1))
+            print_verbose "Cleaned GTK bookmarks: $HOME"
         fi
         
         # GNOME Tracker-3 Databases (current user)
@@ -552,6 +592,14 @@ clean_linux_user_traces() {
             count=$((count + 1))
             print_verbose "Cleaned Zeitgeist logs: $HOME/.local/share/zeitgeist"
         fi
+        
+        # Editor/IDE traces (current user)
+        for editor_path in "$HOME/.local/share/code-server/User" "$HOME/.config/Code/User" "$HOME/.local/share/.IntelliJIdea*/system/log" "$HOME/.local/share/code/Backups"; do
+            if safe_remove_tree "$editor_path"; then
+                count=$((count + 1))
+                print_verbose "Cleaned editor traces: $editor_path"
+            fi
+        done
     fi
     
     CLEANED_COUNT=$((CLEANED_COUNT + count))
@@ -783,10 +831,239 @@ clean_macos_usage_traces() {
     print_success "Usage traces cleaned ($count items)"
 }
 
+# Extended Module: Linux Package Manager Artifacts
+clean_linux_package_artifacts() {
+    print_info "Cleaning Linux package manager artifacts..."
+    local count=0
+    
+    # APT/DPKG artifacts
+    if command -v apt >/dev/null 2>&1 || command -v dpkg >/dev/null 2>&1; then
+        for path in /var/cache/apt/archives/* /var/log/apt/* /var/log/dpkg.log*; do
+            if safe_remove_tree "$path"; then
+                count=$((count + 1))
+                print_verbose "Cleaned APT/DPKG: $path"
+            fi
+        done
+    fi
+    
+    # YUM/DNF artifacts
+    if command -v yum >/dev/null 2>&1 || command -v dnf >/dev/null 2>&1; then
+        for path in /var/cache/yum/* /var/cache/dnf/* /var/log/yum.log* /var/log/dnf.log*; do
+            if safe_remove_tree "$path"; then
+                count=$((count + 1))
+                print_verbose "Cleaned YUM/DNF: $path"
+            fi
+        done
+    fi
+    
+    # Pacman artifacts (clean regardless of pacman availability)
+    for path in /var/cache/pacman/pkg/* /var/log/pacman.log*; do
+        if safe_remove_tree "$path"; then
+            count=$((count + 1))
+            print_verbose "Cleaned Pacman: $path"
+        fi
+    done
+    
+    CLEANED_COUNT=$((CLEANED_COUNT + count))
+    print_success "Package manager artifacts cleaned ($count items)"
+}
+
+# Extended Module: Linux Browser Traces
+clean_linux_browser_traces() {
+    print_info "Cleaning Linux browser traces..."
+    local count=0
+    
+    # Get all user home directories
+    local homes
+    if [ "$(id -u)" -eq 0 ]; then
+        homes=$(awk -F: '$3 >= 1000 && $3 < 65534 {print $6}' /etc/passwd)
+        homes="$homes /root"
+    else
+        homes="$HOME"
+    fi
+    
+    for home in $homes; do
+        if [ -d "$home" ]; then
+            # Firefox artifacts
+            for firefox_dir in "$home/.mozilla/firefox/"*".default-release" "$home/.mozilla/firefox/"*".default"; do
+                if [ -d "$firefox_dir" ]; then
+                    for artifact in cache2 storage thumbnails sessionstore-backups; do
+                        if safe_remove_tree "$firefox_dir/$artifact"; then
+                            count=$((count + 1))
+                            print_verbose "Cleaned Firefox $artifact: $home"
+                        fi
+                    done
+                    # Clean specific files
+                    for file in places.sqlite cookies.sqlite formhistory.sqlite; do
+                        if safe_remove "$firefox_dir/$file"; then
+                            count=$((count + 1))
+                            print_verbose "Cleaned Firefox $file: $home"
+                        fi
+                    done
+                fi
+            done
+            
+            # Chrome/Chromium artifacts
+            for chrome_dir in "$home/.config/google-chrome/Default" "$home/.config/chromium/Default"; do
+                if [ -d "$chrome_dir" ]; then
+                    for artifact in Cache History Cookies "Web Data" "Top Sites"; do
+                        if safe_remove_tree "$chrome_dir/$artifact"; then
+                            count=$((count + 1))
+                            print_verbose "Cleaned Chrome/Chromium $artifact: $home"
+                        fi
+                    done
+                fi
+            done
+        fi
+    done
+    
+    CLEANED_COUNT=$((CLEANED_COUNT + count))
+    print_success "Browser traces cleaned ($count items)"
+}
+
+# Extended Module: Linux SSH Traces  
+clean_linux_ssh_traces() {
+    print_info "Cleaning Linux SSH traces..."
+    local count=0
+    
+    # Get all user home directories
+    local homes
+    if [ "$(id -u)" -eq 0 ]; then
+        homes=$(awk -F: '$3 >= 1000 && $3 < 65534 {print $6}' /etc/passwd)
+        homes="$homes /root"
+    else
+        homes="$HOME"
+    fi
+    
+    for home in $homes; do
+        if [ -d "$home/.ssh" ]; then
+            # Clean known_hosts
+            if truncate_file "$home/.ssh/known_hosts"; then
+                count=$((count + 1))
+                print_verbose "Cleaned SSH known_hosts: $home"
+            fi
+            
+            # Clean any SSH log files
+            for ssh_log in "$home/.ssh/"*.log; do
+                if safe_remove "$ssh_log"; then
+                    count=$((count + 1))
+                    print_verbose "Cleaned SSH log: $ssh_log"
+                fi
+            done
+        fi
+    done
+    
+    # Clean system SSH logs from auth.log/secure
+    for log in /var/log/auth.log* /var/log/secure*; do
+        if [ -f "$log" ] && [ "$DRY_RUN" -eq 0 ]; then
+            # Remove SSH-specific entries while preserving other auth logs
+            sed -i '/sshd\[/d' "$log" 2>/dev/null || true
+            count=$((count + 1))
+            print_verbose "Cleaned SSH entries from: $log"
+        fi
+    done
+    
+    CLEANED_COUNT=$((CLEANED_COUNT + count))
+    print_success "SSH traces cleaned ($count items)"
+}
+
+# Extended Module: Linux Container Traces
+clean_linux_container_traces() {
+    print_info "Cleaning Linux container traces..."
+    local count=0
+    
+    # Docker artifacts (clean regardless of docker availability)
+    # Clean Docker logs
+    for docker_log in /var/lib/docker/containers/*/*.log; do
+        if truncate_file "$docker_log"; then
+            count=$((count + 1))
+            print_verbose "Cleaned Docker log: $docker_log"
+        fi
+    done
+    
+    # Clean user Docker config
+    local homes
+    if [ "$(id -u)" -eq 0 ]; then
+        homes=$(awk -F: '$3 >= 1000 && $3 < 65534 {print $6}' /etc/passwd)
+        homes="$homes /root"
+    else
+        homes="$HOME"
+    fi
+    
+    for home in $homes; do
+        for docker_config in "$home/.docker/config.json" "$home/.docker/machine"; do
+            if safe_remove_tree "$docker_config"; then
+                count=$((count + 1))
+                print_verbose "Cleaned Docker config: $docker_config"
+            fi
+        done
+    done
+    
+    # Podman/K8s artifacts (clean regardless of podman availability)
+    for podman_log in /var/lib/containers/*/overlay/*/userdata /var/log/pods/*; do
+        if safe_remove_tree "$podman_log"; then
+            count=$((count + 1))
+            print_verbose "Cleaned Podman/K8s: $podman_log"
+        fi
+    done
+    
+    # Libvirt/QEMU artifacts (clean regardless of virsh availability)
+    for libvirt_path in /var/log/libvirt/qemu/* /var/cache/libvirt/qemu/*; do
+        if safe_remove_tree "$libvirt_path"; then
+            count=$((count + 1))
+            print_verbose "Cleaned libvirt: $libvirt_path"
+        fi
+    done
+    
+    CLEANED_COUNT=$((CLEANED_COUNT + count))
+    print_success "Container traces cleaned ($count items)"
+}
+
+# Extended Module: Additional systemd artifacts
+clean_linux_systemd_extra() {
+    print_info "Cleaning additional systemd artifacts..."
+    local count=0
+    
+    # Random seed file
+    if safe_remove "/var/lib/systemd/random-seed"; then
+        count=$((count + 1))
+        print_verbose "Cleaned systemd random-seed"
+    fi
+    
+    # Live-session journal traces
+    for journal_dir in /run/log/journal/*; do
+        if safe_remove_tree "$journal_dir"; then
+            count=$((count + 1))
+            print_verbose "Cleaned live-session journal: $journal_dir"
+        fi
+    done
+    
+    CLEANED_COUNT=$((CLEANED_COUNT + count))
+    print_success "Additional systemd artifacts cleaned ($count items)"
+}
+
+# Extended Module: Print subsystem
+clean_linux_print_traces() {
+    print_info "Cleaning print subsystem traces..."
+    local count=0
+    
+    # CUPS job history and logs
+    for cups_path in /var/spool/cups/* /var/log/cups/*; do
+        if safe_remove_tree "$cups_path"; then
+            count=$((count + 1))
+            print_verbose "Cleaned CUPS: $cups_path"
+        fi
+    done
+    
+    CLEANED_COUNT=$((CLEANED_COUNT + count))
+    print_success "Print subsystem traces cleaned ($count items)"
+}
+
 # Run cleaning modules based on OS
 run_cleaners() {
     case "$OS_TYPE" in
         linux)
+            # Basic modules
             if [ -z "$MODULES" ] || echo "$MODULES" | grep -q "shell"; then
                 clean_linux_shell_history
             fi
@@ -804,6 +1081,26 @@ run_cleaners() {
             fi
             if [ -z "$MODULES" ] || echo "$MODULES" | grep -q "user"; then
                 clean_linux_user_traces
+            fi
+            
+            # Extended modules
+            if [ -z "$MODULES" ] || echo "$MODULES" | grep -q "package"; then
+                clean_linux_package_artifacts
+            fi
+            if [ -z "$MODULES" ] || echo "$MODULES" | grep -q "browser"; then
+                clean_linux_browser_traces
+            fi
+            if [ -z "$MODULES" ] || echo "$MODULES" | grep -q "ssh"; then
+                clean_linux_ssh_traces
+            fi
+            if [ -z "$MODULES" ] || echo "$MODULES" | grep -q "container"; then
+                clean_linux_container_traces
+            fi
+            if [ -z "$MODULES" ] || echo "$MODULES" | grep -q "systemd"; then
+                clean_linux_systemd_extra
+            fi
+            if [ -z "$MODULES" ] || echo "$MODULES" | grep -q "print"; then
+                clean_linux_print_traces
             fi
             ;;
         macos)
@@ -838,14 +1135,25 @@ list_modules() {
     echo ""
     case "$OS_TYPE" in
         linux)
+            echo "Basic modules:"
             echo "  shell    - Shell history files (.bash_history, etc.)"
             echo "  logs     - System logs (/var/log/*)"
             echo "  audit    - Audit logs (auditd)"
             echo "  temp     - Temporary suspicious files (/tmp/*)"
             echo "  network  - Network traces (ARP cache, NetworkManager)"
             echo "  user     - User traces (thumbnails, utmp)"
+            echo ""
+            echo "Extended modules:"
+            echo "  package  - Package manager artifacts (apt, yum, pacman)"
+            echo "  container- Container/VM logs (Docker, Podman, libvirt)"
+            echo "  browser  - Browser traces (Firefox, Chrome/Chromium)"
+            echo "  ssh      - SSH operational traces and logs"
+            echo "  print    - CUPS print subsystem logs"
+            echo "  systemd  - Additional systemd artifacts"
+            echo "  crash    - Crash dumps and core files"
             ;;
         macos)
+            echo "Basic modules:"
             echo "  shell      - Shell history files"
             echo "  macos      - macOS specific traces (.DS_Store, Spotlight, etc.)"
             echo "  audit      - Audit (BSM) logs"
@@ -853,6 +1161,12 @@ list_modules() {
             echo "  unified    - Unified logs (10.12+)"
             echo "  fileevents - FSEvents and quarantine database"
             echo "  usage      - App usage traces (KnowledgeC, notifications)"
+            echo ""
+            echo "Extended modules:"
+            echo "  macos-logs - Additional diagnostic and crash logs"
+            echo "  macos-wifi - Wi-Fi and location traces"
+            echo "  macos-brew - Homebrew artifacts"
+            echo "  editor     - IDE and editor traces"
             ;;
     esac
     echo ""
