@@ -5,7 +5,7 @@ Nyx (goddess of the night in Greek mythology) is a self-contained script for cle
 > **⚠️ DISCLAIMER:** Nyx is **alpha software**.
 
 <p align="center">
-  <img alt="Nyx" src="https://raw.githubusercontent.com/evilsocket/nyx/main/logo.png" height="140" />
+  <img alt="Nyx" src="https://raw.githubusercontent.com/evilsocket/nyx/main/logo.png" height="250" />
 </p>
 
 ## Features
