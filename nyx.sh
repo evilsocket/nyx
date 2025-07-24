@@ -436,9 +436,17 @@ clean_linux_network_traces() {
     # Clean systemd-coredump logs if present
     if [ -d "/var/lib/systemd/coredump" ]; then
         if [ "$DRY_RUN" -eq 0 ]; then
-            safe_remove_tree "/var/lib/systemd/coredump/*"
+            # Remove individual files in the coredump directory
+            for coredump in /var/lib/systemd/coredump/*; do
+                if [ -f "$coredump" ] || [ -d "$coredump" ]; then
+                    safe_remove_tree "$coredump"
+                fi
+            done
             count=$((count + 1))
             print_verbose "Cleaned systemd-coredump logs"
+        else
+            print_verbose "[DRY RUN] Would clean systemd-coredump logs"
+            count=$((count + 1))
         fi
     fi
     
