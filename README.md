@@ -4,6 +4,10 @@ Nyx (goddess of the night in Greek mythology) is a self-contained script for cle
 
 > **⚠️ DISCLAIMER:** Nyx is **alpha software**.
 
+<p align="center">
+  <img alt="Nyx" src="https://raw.githubusercontent.com/evilsocket/nyx/main/logo.png" height="140" />
+</p>
+
 ## Features
 
 The following table details exactly which forensic artifacts are cleaned by each module:
