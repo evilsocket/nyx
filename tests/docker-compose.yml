@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  nyx-test:
+    build:
+      context: ../
+      dockerfile: ./tests/Dockerfile
+    container_name: nyx-test
+    hostname: nyx-test
+    privileged: true
+    volumes:
+      - ./create-artifacts.sh:/usr/local/bin/create-artifacts.sh:ro
+      - ./verify-cleanup.sh:/usr/local/bin/verify-cleanup.sh:ro
+      - ../nyx.sh:/usr/local/bin/nyx.sh:ro
+    environment:
+      - TERM=xterm-256color
+    stdin_open: true
+    tty: true
+    command: tail -f /dev/null # Keep container running
