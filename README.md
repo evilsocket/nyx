@@ -17,8 +17,8 @@ The following table details which artifacts are cleaned by each module:
 | **Linux** | `shell` | Shell history files (bash, zsh, python, mysql, etc.), command histories, recently used files |
 | **Linux** | `logs` | System logs (auth, syslog, kernel, boot, package managers), web server logs, journald |
 | **Linux** | `audit` | Audit logs, search logs, in-kernel audit rules |
-| **Linux** | `temp` | Scripts in temp dirs, hidden files, thumbnail caches, core dumps, crash reports, trash |
-| **Linux** | `network` | ARP cache, NetworkManager connections, DHCP leases, coredump logs |
+| **Linux** | `temp` | Scripts in temp dirs, hidden files, thumbnail caches, core dumps, crash reports, systemd coredumps, trash |
+| **Linux** | `network` | ARP cache, NetworkManager connections, DHCP leases |
 | **Linux** | `user` | Login records, thumbnails, GTK bookmarks, GNOME Tracker, Zeitgeist, editor traces (VS Code, JetBrains) |
 | **Linux** | `package` | Package caches and logs (APT, YUM, DNF, Pacman) |
 | **Linux** | `browser` | Firefox (cache, storage, databases), Chrome/Chromium (history, cookies, cache) |

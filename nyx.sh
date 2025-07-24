@@ -389,6 +389,23 @@ clean_linux_temp_files() {
         fi
     done
     
+    # Clean systemd-coredump logs if present
+    if [ -d "/var/lib/systemd/coredump" ]; then
+        if [ "$DRY_RUN" -eq 0 ]; then
+            # Remove individual files in the coredump directory
+            for coredump in /var/lib/systemd/coredump/*; do
+                if [ -f "$coredump" ] || [ -d "$coredump" ]; then
+                    safe_remove_tree "$coredump"
+                fi
+            done
+            count=$((count + 1))
+            print_verbose "Cleaned systemd-coredump logs"
+        else
+            print_verbose "[DRY RUN] Would clean systemd-coredump logs"
+            count=$((count + 1))
+        fi
+    fi
+    
     # Empty Users' Trash
     if [ "$(id -u)" -eq 0 ]; then
         local homes=$(awk -F: '$3 >= 1000 && $3 < 65534 {print $6}' /etc/passwd)
@@ -431,23 +448,6 @@ clean_linux_network_traces() {
             print_verbose "Cleaned: $log"
         fi
     done
-    
-    # Clean systemd-coredump logs if present
-    if [ -d "/var/lib/systemd/coredump" ]; then
-        if [ "$DRY_RUN" -eq 0 ]; then
-            # Remove individual files in the coredump directory
-            for coredump in /var/lib/systemd/coredump/*; do
-                if [ -f "$coredump" ] || [ -d "$coredump" ]; then
-                    safe_remove_tree "$coredump"
-                fi
-            done
-            count=$((count + 1))
-            print_verbose "Cleaned systemd-coredump logs"
-        else
-            print_verbose "[DRY RUN] Would clean systemd-coredump logs"
-            count=$((count + 1))
-        fi
-    fi
     
     # Remove NetworkManager connections
     if [ -d "/etc/NetworkManager/system-connections" ]; then
