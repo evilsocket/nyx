@@ -13,7 +13,6 @@ OS_TYPE=""
 RESULTS=""
 CLEANED_COUNT=0
 FAILED_COUNT=0
-ADVANCED=0
 
 # Color codes (disabled if not TTY)
 if [ -t 1 ]; then
@@ -72,7 +71,6 @@ detect_os() {
     case "$(uname -s)" in
         Linux*)     OS_TYPE="linux";;
         Darwin*)    OS_TYPE="macos";;
-        CYGWIN*|MINGW*|MSYS*)    OS_TYPE="windows";;
         *)          
             print_error "Unsupported operating system: $(uname -s)"
             exit 1
@@ -84,23 +82,11 @@ detect_os() {
 
 # Check if running as root/admin
 check_privileges() {
-    case "$OS_TYPE" in
-        linux|macos)
-            if [ "$(id -u)" -ne 0 ]; then
-                print_error "This script must be run as root"
-                echo "Try: sudo $0 $*"
-                exit 1
-            fi
-            ;;
-        windows)
-            # Check if running as Administrator
-            net session >/dev/null 2>&1
-            if [ $? -ne 0 ]; then
-                print_error "This script must be run as Administrator"
-                exit 1
-            fi
-            ;;
-    esac
+    if [ "$(id -u)" -ne 0 ]; then
+        print_error "This script must be run as root"
+        echo "Try: sudo $0 $*"
+        exit 1
+    fi
 }
 
 # Safe file operations
@@ -359,12 +345,24 @@ clean_linux_network_traces() {
     local count=0
     
     # Network-related logs
-    for log in /var/log/daemon.log* /etc/NetworkManager/system-connections/*; do
+    for log in /var/log/daemon.log*; do
         if truncate_file "$log"; then
             count=$((count + 1))
             print_verbose "Cleaned: $log"
         fi
     done
+    
+    # Remove NetworkManager connections
+    if [ -d "/etc/NetworkManager/system-connections" ]; then
+        for conn in /etc/NetworkManager/system-connections/*; do
+            if [ -f "$conn" ]; then
+                if safe_remove "$conn"; then
+                    count=$((count + 1))
+                    print_verbose "Removed NetworkManager connection: $conn"
+                fi
+            fi
+        done
+    fi
     
     # Clear ARP cache
     if [ "$DRY_RUN" -eq 0 ]; then
@@ -682,254 +680,6 @@ clean_macos_usage_traces() {
     print_success "Usage traces cleaned ($count items)"
 }
 
-# Module: Windows Event Logs
-clean_windows_event_logs() {
-    print_info "Cleaning Windows event logs..."
-    local count=0
-    
-    # Clear main event logs
-    for log in Application System Security Setup ForwardedEvents; do
-        if [ "$DRY_RUN" -eq 1 ]; then
-            print_verbose "[DRY RUN] Would clear event log: $log"
-            count=$((count + 1))
-        else
-            wevtutil cl "$log" 2>/dev/null && count=$((count + 1)) || true
-        fi
-    done
-    
-    # Clear PowerShell logs
-    for log in "Microsoft-Windows-PowerShell/Operational" \
-               "Windows PowerShell" \
-               "Microsoft-Windows-Sysmon/Operational" \
-               "Microsoft-Windows-TaskScheduler/Operational" \
-               "Microsoft-Windows-AppLocker/EXE and DLL" \
-               "Microsoft-Windows-WinRM/Operational"; do
-        if [ "$DRY_RUN" -eq 1 ]; then
-            print_verbose "[DRY RUN] Would clear event log: $log"
-            count=$((count + 1))
-        else
-            wevtutil cl "$log" 2>/dev/null && count=$((count + 1)) || true
-        fi
-    done
-    
-    CLEANED_COUNT=$((CLEANED_COUNT + count))
-    print_success "Event logs cleaned ($count logs)"
-}
-
-# Module: Windows History
-clean_windows_history() {
-    print_info "Cleaning Windows history..."
-    local count=0
-    
-    # PowerShell history
-    local ps_history="$APPDATA\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt"
-    if truncate_file "$ps_history"; then
-        count=$((count + 1))
-        print_verbose "Cleaned PowerShell history"
-    fi
-    
-    # Clear command prompt history
-    if [ "$DRY_RUN" -eq 0 ]; then
-        doskey /reinstall >/dev/null 2>&1 || true
-        count=$((count + 1))
-    fi
-    
-    # Clear Run dialog history
-    if [ "$DRY_RUN" -eq 1 ]; then
-        print_verbose "[DRY RUN] Would clear Run dialog history"
-        count=$((count + 1))
-    else
-        reg delete "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\RunMRU" /va /f 2>/dev/null || true
-        count=$((count + 1))
-    fi
-    
-    # Clear prefetch and Superfetch/ReadyBoot
-    if [ "$DRY_RUN" -eq 0 ]; then
-        rm -f /Windows/Prefetch/*.pf 2>/dev/null || true
-        rm -f /Windows/Prefetch/ReadyBoot/*.etl 2>/dev/null || true
-        count=$((count + 1))
-    fi
-    
-    # Clear LNK files
-    if [ "$DRY_RUN" -eq 0 ]; then
-        rm -f "$APPDATA/Microsoft/Windows/Recent/*.lnk" 2>/dev/null || true
-        count=$((count + 1))
-    fi
-    
-    # Clear Jump Lists
-    if [ "$DRY_RUN" -eq 0 ]; then
-        rm -f "$APPDATA/Microsoft/Windows/Recent/AutomaticDestinations/*" 2>/dev/null || true
-        rm -f "$APPDATA/Microsoft/Windows/Recent/CustomDestinations/*" 2>/dev/null || true
-        count=$((count + 1))
-    fi
-    
-    CLEANED_COUNT=$((CLEANED_COUNT + count))
-    print_success "Windows history cleaned ($count items)"
-}
-
-# Module: Windows Registry MRUs
-clean_windows_registry() {
-    print_info "Cleaning Windows registry MRUs..."
-    local count=0
-    
-    # List of MRU registry keys to clean
-    local mru_keys="
-    HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\ComDlg32\OpenSavePidlMRU
-    HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\ComDlg32\LastVisitedPidlMRU
-    HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\RecentDocs
-    HKCU\Software\Microsoft\Office\*\*\File MRU
-    HKCU\Software\Microsoft\Office\*\*\Place MRU
-    HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\TypedPaths
-    HKCU\Software\Microsoft\Windows\Shell\Bags
-    HKCU\Software\Microsoft\Windows\Shell\BagMRU
-    HKCU\Software\Microsoft\Windows\ShellNoRoam\Bags
-    HKCU\Software\Microsoft\Windows\ShellNoRoam\BagMRU
-    HKCU\Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\Bags
-    HKCU\Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\BagMRU
-    HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\UserAssist
-    "
-    
-    for key in $mru_keys; do
-        if [ "$DRY_RUN" -eq 1 ]; then
-            print_verbose "[DRY RUN] Would clear registry key: $key"
-            count=$((count + 1))
-        else
-            reg delete "$key" /va /f 2>/dev/null && count=$((count + 1)) || true
-        fi
-    done
-    
-    # USB history
-    if [ "$DRY_RUN" -eq 0 ]; then
-        reg delete 'HKLM\SYSTEM\CurrentControlSet\Enum\USBSTOR' /f 2>/dev/null || true
-        count=$((count + 1))
-    fi
-    
-    # Mounted devices
-    if [ "$DRY_RUN" -eq 0 ]; then
-        reg delete 'HKLM\SYSTEM\MountedDevices' /va /f 2>/dev/null || true
-        count=$((count + 1))
-    fi
-    
-    # BAM (Background Activity Monitor)
-    if [ "$DRY_RUN" -eq 0 ]; then
-        reg delete 'HKLM\SYSTEM\CurrentControlSet\Services\bam\State\UserSettings' /f 2>/dev/null || true
-        count=$((count + 1))
-    fi
-    
-    # ShimCache/AppCompat
-    if [ "$DRY_RUN" -eq 0 ]; then
-        reg delete 'HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\AppCompatCache' /va /f 2>/dev/null || true
-        count=$((count + 1))
-    fi
-    
-    CLEANED_COUNT=$((CLEANED_COUNT + count))
-    print_success "Registry MRUs cleaned ($count keys)"
-}
-
-# Module: Windows File System Traces
-clean_windows_filesystem_traces() {
-    print_info "Cleaning Windows file system traces..."
-    local count=0
-    
-    # Get list of drives dynamically
-    local drives=""
-    if command -v wmic >/dev/null 2>&1; then
-        drives=$(wmic logicaldisk get name 2>/dev/null | grep -E '^[A-Z]:' | tr -d ':\r\n' | sed 's/./& /g')
-    else
-        # Fallback to common drives if wmic not available
-        drives="C D E F G H"
-    fi
-    
-    # Clean USN Journal
-    if [ "$DRY_RUN" -eq 0 ]; then
-        for drive in $drives; do
-            fsutil usn deletejournal /D $drive: 2>/dev/null || true
-        done
-        count=$((count + 1))
-    fi
-    
-    # Empty Recycle Bin
-    if [ "$DRY_RUN" -eq 0 ]; then
-        for drive in $drives; do
-            rd /s /q $drive:\$Recycle.Bin 2>/dev/null || true
-        done
-        count=$((count + 1))
-    fi
-    
-    # Clean thumbcache
-    if [ "$DRY_RUN" -eq 0 ]; then
-        rm -f "$USERPROFILE/AppData/Local/Microsoft/Windows/Explorer/thumbcache_*.db" 2>/dev/null || true
-        count=$((count + 1))
-    fi
-    
-    # Clean SRUDB
-    if [ "$DRY_RUN" -eq 0 ]; then
-        rm -f "C:/Windows/System32/sru/SRUDB.dat" 2>/dev/null || true
-        count=$((count + 1))
-    fi
-    
-    CLEANED_COUNT=$((CLEANED_COUNT + count))
-    print_success "File system traces cleaned ($count items)"
-}
-
-# Module: Windows Temporary Files
-clean_windows_temp_files() {
-    print_info "Cleaning Windows temporary files..."
-    local count=0
-    
-    # Remove temps
-    if [ "$DRY_RUN" -eq 0 ]; then
-        rm -rf "$TEMP/*" 2>/dev/null || true
-        rm -rf "C:/Windows/Temp/*" 2>/dev/null || true
-        rm -f "C:/Windows/Prefetch/*.tmp" 2>/dev/null || true
-        count=$((count + 1))
-    fi
-    
-    # Clear DNS cache
-    if [ "$DRY_RUN" -eq 0 ]; then
-        ipconfig /flushdns 2>/dev/null || true
-        count=$((count + 1))
-    fi
-    
-    # Clear Volume Shadow Copies (with warning)
-    if [ "$DRY_RUN" -eq 0 ]; then
-        print_verbose "WARNING: Removing Volume Shadow Copies will delete restore points"
-        vssadmin delete shadows /all /quiet 2>/dev/null || true
-        count=$((count + 1))
-    fi
-    
-    # Windows Error Reporting archives
-    if [ "$DRY_RUN" -eq 0 ]; then
-        rm -rf "C:/ProgramData/Microsoft/Windows/WER/ReportArchive/"* 2>/dev/null || true
-        rm -rf "C:/ProgramData/Microsoft/Windows/WER/ReportQueue/"* 2>/dev/null || true
-        rm -rf "$LOCALAPPDATA/Microsoft/Windows/WER/ReportArchive/"* 2>/dev/null || true
-        rm -rf "$LOCALAPPDATA/Microsoft/Windows/WER/ReportQueue/"* 2>/dev/null || true
-        count=$((count + 1))
-        print_verbose "Cleaned Windows Error Reporting archives"
-    fi
-    
-    # Crash dumps
-    if [ "$DRY_RUN" -eq 0 ]; then
-        rm -rf "C:/Windows/Minidump/"* 2>/dev/null || true
-        rm -f "C:/Windows/MEMORY.DMP" 2>/dev/null || true
-        count=$((count + 1))
-        print_verbose "Cleaned crash dumps"
-    fi
-    
-    # Memory residue hardening (optional - requires reboot to take effect)
-    if [ "$ADVANCED" -eq 1 ] && [ "$DRY_RUN" -eq 0 ]; then
-        # Disable hibernation (removes hiberfil.sys)
-        powercfg -h off 2>/dev/null || true
-        # Enable pagefile clearing at shutdown
-        reg add "HKLM\System\CurrentControlSet\Control\Session Manager\Memory Management" /v ClearPageFileAtShutdown /t REG_DWORD /d 1 /f 2>/dev/null || true
-        count=$((count + 1))
-        print_verbose "Enabled memory residue hardening (requires reboot)"
-    fi
-    
-    CLEANED_COUNT=$((CLEANED_COUNT + count))
-    print_success "Temporary files cleaned ($count items)"
-}
-
 # Run cleaning modules based on OS
 run_cleaners() {
     case "$OS_TYPE" in
@@ -976,23 +726,6 @@ run_cleaners() {
                 clean_macos_usage_traces
             fi
             ;;
-        windows)
-            if [ -z "$MODULES" ] || echo "$MODULES" | grep -q "events"; then
-                clean_windows_event_logs
-            fi
-            if [ -z "$MODULES" ] || echo "$MODULES" | grep -q "history"; then
-                clean_windows_history
-            fi
-            if [ -z "$MODULES" ] || echo "$MODULES" | grep -q "registry"; then
-                clean_windows_registry
-            fi
-            if [ -z "$MODULES" ] || echo "$MODULES" | grep -q "filesystem"; then
-                clean_windows_filesystem_traces
-            fi
-            if [ -z "$MODULES" ] || echo "$MODULES" | grep -q "temp"; then
-                clean_windows_temp_files
-            fi
-            ;;
     esac
 }
 
@@ -1018,13 +751,6 @@ list_modules() {
             echo "  fileevents - FSEvents and quarantine database"
             echo "  usage      - App usage traces (KnowledgeC, notifications)"
             ;;
-        windows)
-            echo "  events     - Windows Event Logs (including Sysmon, WinRM)"
-            echo "  history    - PowerShell/CMD history, prefetch, jump lists"
-            echo "  registry   - Registry MRUs, USB history, BAM"
-            echo "  filesystem - USN journal, recycle bin, thumbcache"
-            echo "  temp       - Temporary files, DNS cache, shadow copies"
-            ;;
     esac
     echo ""
 }
@@ -1041,7 +767,6 @@ usage() {
     echo "  -l, --list        List available modules"
     echo "  -m, --modules     Comma-separated list of modules to run"
     echo "  -f, --force       Skip confirmation prompt"
-    echo "  -a, --advanced    Also wipe hiberfil.sys and zero pagefile on shutdown"
     echo ""
     echo "Examples:"
     echo "  $0                    # Run all modules (interactive)"
@@ -1080,9 +805,6 @@ parse_args() {
                 ;;
             -f|--force)
                 FORCE=1
-                ;;
-            -a|--advanced)
-                ADVANCED=1
                 ;;
             *)
                 print_error "Unknown option: $1"
