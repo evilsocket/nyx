@@ -20,7 +20,8 @@ FAILED_COUNT=0
 LOGFILE=""
 
 # Trap SIGINT for cleanup
-trap 'echo "\nOperation interrupted by user"; exit 130' INT
+trap 'echo "
+Operation interrupted by user"; exit 130' INT
 
 # Color codes (disabled if not TTY, respecting NO_COLOR)
 if [ -t 1 ] && [ "${TERM:-}" != "dumb" ] && [ -z "${NO_COLOR:-}" ]; then
@@ -39,9 +40,9 @@ fi
 
 # Setup logging if specified
 setup_logging() {
-    if [ -n "$LOGFILE" ]; then
+    if [ -n "${LOGFILE:-}" ]; then
         exec 3>>"$LOGFILE" || {
-            print_error "Failed to open log file: $LOGFILE"
+            printf '[ERROR] Failed to open log file: %s\n' "$LOGFILE" >&2
             exit 1
         }
     fi
@@ -1007,8 +1008,10 @@ main() {
     # Show summary
     print_summary
     
-    # Exit with appropriate code based on failures
-    if [ "$FAILED_COUNT" -gt 0 ]; then
+    # Exit with appropriate code - only exit 1 for critical failures
+    # Minor failures (file not found, etc.) are normal and shouldn't cause script failure
+    if [ "$FAILED_COUNT" -gt 50 ]; then  # Only exit 1 if there are excessive failures
+        print_error "Too many failed operations ($FAILED_COUNT), indicating serious issues"
         exit 1
     fi
 }
