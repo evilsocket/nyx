@@ -2,7 +2,11 @@
 # Nyx - Cross-platform anti-forensics trace cleaner
 # Developed by Simone Margaritelli <evilsocket@gmail.com>
 # Released under the GPLv3 license.
-set -e
+set -eu
+# Enable pipefail if supported (bash extension, not POSIX)
+if (set -o pipefail 2>/dev/null); then
+    set -o pipefail
+fi
 
 # Global variables
 VERSION="1.0.0-alpha"
@@ -13,9 +17,13 @@ OS_TYPE=""
 RESULTS=""
 CLEANED_COUNT=0
 FAILED_COUNT=0
+LOGFILE=""
 
-# Color codes (disabled if not TTY)
-if [ -t 1 ]; then
+# Trap SIGINT for cleanup
+trap 'echo "\nOperation interrupted by user"; exit 130' INT
+
+# Color codes (disabled if not TTY, respecting NO_COLOR)
+if [ -t 1 ] && [ "${TERM:-}" != "dumb" ] && [ -z "${NO_COLOR:-}" ]; then
     RED='\033[0;31m'
     GREEN='\033[0;32m'
     YELLOW='\033[0;33m'
@@ -29,6 +37,23 @@ else
     NC=''
 fi
 
+# Setup logging if specified
+setup_logging() {
+    if [ -n "$LOGFILE" ]; then
+        exec 3>>"$LOGFILE" || {
+            print_error "Failed to open log file: $LOGFILE"
+            exit 1
+        }
+    fi
+}
+
+# Log function
+log_message() {
+    if [ -n "$LOGFILE" ]; then
+        printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$1" >&3
+    fi
+}
+
 # Print functions
 print_banner() {
     echo "${BLUE}================================================${NC}"
@@ -36,29 +61,42 @@ print_banner() {
     echo "${BLUE}      Anti-Forensics Trace Cleaner${NC}"
     echo "${BLUE}================================================${NC}"
     echo ""
+    log_message "Nyx v${VERSION} started"
 }
 
 print_warning() {
-    echo "${YELLOW}⚠️  WARNING: This tool will permanently delete forensic traces!${NC}"
-    echo "${YELLOW}This action cannot be undone and may impact system stability.${NC}"
+    local msg="⚠️  WARNING: This tool will permanently delete forensic traces!"
+    local msg2="This action cannot be undone and may impact system stability."
+    echo "${YELLOW}${msg}${NC}"
+    echo "${YELLOW}${msg2}${NC}"
     echo ""
+    log_message "WARNING: ${msg}"
+    log_message "WARNING: ${msg2}"
 }
 
 print_error() {
-    echo "${RED}[ERROR] $1${NC}" >&2
+    local msg="[ERROR] $1"
+    echo "${RED}${msg}${NC}" >&2
+    log_message "ERROR: $1"
 }
 
 print_success() {
-    echo "${GREEN}[✓] $1${NC}"
+    local msg="[✓] $1"
+    echo "${GREEN}${msg}${NC}"
+    log_message "SUCCESS: $1"
 }
 
 print_info() {
-    echo "${BLUE}[*] $1${NC}"
+    local msg="[*] $1"
+    echo "${BLUE}${msg}${NC}"
+    log_message "INFO: $1"
 }
 
 print_verbose() {
     if [ "$VERBOSE" -eq 1 ]; then
-        echo "[DEBUG] $1"
+        local msg="[DEBUG] $1"
+        echo "$msg"
+        log_message "DEBUG: $1"
     fi
 }
 
@@ -97,7 +135,30 @@ safe_remove() {
             print_verbose "[DRY RUN] Would remove: $file"
             return 0
         else
-            rm -f "$file" 2>/dev/null && return 0 || return 1
+            if rm -f -- "$file" 2>/dev/null; then
+                return 0
+            else
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+                return 1
+            fi
+        fi
+    fi
+    return 1
+}
+
+safe_remove_tree() {
+    local path="$1"
+    if [ -d "$path" ] || [ -f "$path" ]; then
+        if [ "$DRY_RUN" -eq 1 ]; then
+            print_verbose "[DRY RUN] Would remove tree: $path"
+            return 0
+        else
+            if rm -rf -- "$path" 2>/dev/null; then
+                return 0
+            else
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+                return 1
+            fi
         fi
     fi
     return 1
@@ -110,7 +171,12 @@ truncate_file() {
             print_verbose "[DRY RUN] Would truncate: $file"
             return 0
         else
-            > "$file" 2>/dev/null && return 0 || return 1
+            if > "$file" 2>/dev/null; then
+                return 0
+            else
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+                return 1
+            fi
         fi
     fi
     return 1
@@ -222,9 +288,19 @@ clean_linux_audit_logs() {
     
     # Check if auditd is installed
     if [ -d "/var/log/audit" ]; then
+        # Delete in-kernel audit rules first if auditctl is available
+        if command -v auditctl >/dev/null 2>&1 && [ "$DRY_RUN" -eq 0 ]; then
+            auditctl -D 2>/dev/null || true
+            print_verbose "Deleted in-kernel audit rules"
+        fi
+        
         # Stop auditd temporarily
         if [ "$DRY_RUN" -eq 0 ]; then
-            service auditd stop 2>/dev/null || systemctl stop auditd 2>/dev/null || true
+            if command -v systemctl >/dev/null 2>&1; then
+                systemctl stop auditd 2>/dev/null || true
+            elif command -v service >/dev/null 2>&1; then
+                service auditd stop 2>/dev/null || true
+            fi
         fi
         
         # Clean audit logs
@@ -237,7 +313,11 @@ clean_linux_audit_logs() {
         
         # Restart auditd
         if [ "$DRY_RUN" -eq 0 ]; then
-            service auditd start 2>/dev/null || systemctl start auditd 2>/dev/null || true
+            if command -v systemctl >/dev/null 2>&1; then
+                systemctl start auditd 2>/dev/null || true
+            elif command -v service >/dev/null 2>&1; then
+                service auditd start 2>/dev/null || true
+            fi
         fi
     fi
     
@@ -344,13 +424,22 @@ clean_linux_network_traces() {
     print_info "Cleaning Linux network traces..."
     local count=0
     
-    # Network-related logs
-    for log in /var/log/daemon.log*; do
+    # Network-related logs including journal remote and private
+    for log in /var/log/daemon.log* /var/log/journal/remote/* /var/log/private/*; do
         if truncate_file "$log"; then
             count=$((count + 1))
             print_verbose "Cleaned: $log"
         fi
     done
+    
+    # Clean systemd-coredump logs if present
+    if [ -d "/var/lib/systemd/coredump" ]; then
+        if [ "$DRY_RUN" -eq 0 ]; then
+            safe_remove_tree "/var/lib/systemd/coredump/*"
+            count=$((count + 1))
+            print_verbose "Cleaned systemd-coredump logs"
+        fi
+    fi
     
     # Remove NetworkManager connections
     if [ -d "/etc/NetworkManager/system-connections" ]; then
@@ -362,17 +451,22 @@ clean_linux_network_traces() {
                 fi
             fi
         done
+        
+        # Reload NetworkManager instead of full restart to avoid dropping DHCP leases
+        if [ "$DRY_RUN" -eq 0 ] && command -v nmcli >/dev/null 2>&1; then
+            nmcli connection reload 2>/dev/null || true
+            print_verbose "Reloaded NetworkManager connections"
+        fi
     fi
     
     # Clear ARP cache
     if [ "$DRY_RUN" -eq 0 ]; then
-        ip neigh flush all 2>/dev/null || arp -d -a 2>/dev/null || true
+        if command -v ip >/dev/null 2>&1; then
+            ip neigh flush all 2>/dev/null || true
+        elif command -v arp >/dev/null 2>&1; then
+            arp -d -a 2>/dev/null || true
+        fi
         count=$((count + 1))
-    fi
-    
-    # Restart NetworkManager to reset traces
-    if [ "$DRY_RUN" -eq 0 ]; then
-        systemctl restart NetworkManager 2>/dev/null || service network-manager restart 2>/dev/null || true
     fi
     
     CLEANED_COUNT=$((CLEANED_COUNT + count))
@@ -776,6 +870,15 @@ usage() {
     echo ""
 }
 
+# Parse and clean module string
+parse_modules() {
+    if [ -n "$MODULES" ]; then
+        # Convert to lowercase and remove whitespace
+        MODULES=$(echo "$MODULES" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')
+        print_verbose "Parsed modules: $MODULES"
+    fi
+}
+
 # Parse command line arguments
 parse_args() {
     while [ $# -gt 0 ]; do
@@ -805,6 +908,10 @@ parse_args() {
                 ;;
             -f|--force)
                 FORCE=1
+                ;;
+            --logfile)
+                shift
+                LOGFILE="$1"
                 ;;
             *)
                 print_error "Unknown option: $1"
@@ -857,15 +964,18 @@ print_summary() {
     echo ""
 }
 
-# Main function
+# Main function  
 main() {
     # Parse arguments first
     parse_args "$@"
     
+    # Setup logging if specified
+    setup_logging
+    
     # Show banner
     print_banner
     
-    # Detect OS
+    # Detect OS before list option
     detect_os
     
     # Show warning
@@ -875,6 +985,9 @@ main() {
     if [ "$DRY_RUN" -eq 0 ]; then
         check_privileges
     fi
+    
+    # Parse and validate modules
+    parse_modules
     
     # Confirm action
     confirm_action
@@ -893,6 +1006,11 @@ main() {
     
     # Show summary
     print_summary
+    
+    # Exit with appropriate code based on failures
+    if [ "$FAILED_COUNT" -gt 0 ]; then
+        exit 1
+    fi
 }
 
 # Run main function

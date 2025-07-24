@@ -1,9 +1,8 @@
 # Nyx
 
-Nyx (the personification and primordial goddess of the night in Greek mythology) is a self-contained script for cleaning forensic traces on Linux, macOS, and Windows.
+Nyx (goddess of the night in Greek mythology) is a self-contained script for cleaning forensic traces on Linux, macOS, and Windows.
 
-> **⚠️ Disclaimer:**  
-> Nyx is **alpha software** and is provided as-is, without any warranty.  
+> **⚠️ DISCLAIMER:** Nyx is **alpha software**.
 
 ## Features
 
@@ -114,7 +113,7 @@ sudo ./nyx.sh --force
 
 ## License
 
-`bettercap` is made with ♥ and released under the GPL 3 license.
+`nyx` is made with ♥ and released under the GPL 3 license.
 
 ## Stargazers over time
 
