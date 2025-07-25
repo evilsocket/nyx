@@ -1,4 +1,4 @@
-name: Docker Tests
+name: Linux Tests
 
 on:
   push:

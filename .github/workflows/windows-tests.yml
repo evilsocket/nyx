@@ -1,0 +1,54 @@
+name: Windows Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Run Windows tests
+      shell: powershell
+      run: |
+        # Run as Administrator is not directly possible in GitHub Actions
+        # But we can test basic functionality
+        
+        # First, create artifacts
+        Write-Host "================================"
+        Write-Host "Phase 1: Creating Artifacts"
+        Write-Host "================================"
+        & .\tests\create-artifacts.ps1
+        
+        # Run nyx.ps1 in dry-run mode (since we can't run as admin)
+        Write-Host "`n================================"
+        Write-Host "Phase 2: Testing Nyx (Dry Run)"
+        Write-Host "================================"
+        & .\nyx.ps1 -DryRun -Force
+        
+        # Verify what would be cleaned
+        Write-Host "`n================================"
+        Write-Host "Phase 3: Verifying Artifacts"
+        Write-Host "================================"
+        & .\tests\verify-cleaning.ps1
+        
+        Write-Host "`n================================"
+        Write-Host "Test Complete"
+        Write-Host "================================"
+      
+    - name: Upload logs on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-logs
+        path: |
+          tests/*.log
+          nyx-*.log
+        retention-days: 7
