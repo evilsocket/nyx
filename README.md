@@ -32,6 +32,14 @@ The following table details which artifacts are cleaned by each module:
 | **Linux** | `container` | Docker logs/config, Podman/K8s overlays, libvirt/QEMU logs |
 | **Linux** | `systemd` | Random seed, live session journals |
 | **Linux** | `print` | CUPS job history and logs |
+| **Linux** | `cicd` | CI/CD tools (Jenkins, GitLab Runner, GitHub Actions, CircleCI, Travis CI) |
+| **Linux** | `idsips` | IDS/IPS logs (Snort, Suricata, OSSEC, Fail2ban, Samhain) |
+| **Linux** | `crypto` | Cryptocurrency wallets and mining configs (Bitcoin, Ethereum, Monero, XMRig, Electrum) |
+| **Linux** | `privacy` | Privacy tools (Tor Browser, Tor config, I2P, ProtonVPN, Mullvad, Tails) |
+| **Linux** | `pentest` | Penetration testing tools (Burp Suite, OWASP ZAP, Cobalt Strike, Empire, BeEF) |
+| **Linux** | `osint` | OSINT tools (Maltego, SpiderFoot, theHarvester, Recon-ng, Shodan) |
+| **Linux** | `iot` | IoT/Smart Home (Home Assistant, Mosquitto MQTT, Node-RED, OpenHAB) |
+| **Linux** | `ml` | ML/AI frameworks (Jupyter, TensorBoard, PyTorch, Keras, MLflow, Weights & Biases) |
 | **macOS** | `shell` | Shell history files (same as Linux) |
 | **macOS** | `macos` | .DS_Store files, user trash, Spotlight indexes, QuickLook thumbnails, system logs |
 | **macOS** | `audit` | BSM audit trail |

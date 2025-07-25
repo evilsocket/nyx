@@ -63,5 +63,5 @@ RUN touch ~/.bash_history ~/.zsh_history ~/.python_history ~/.mysql_history ~/.s
 
 USER root
 
-# Entry point - use bash instead of systemd for compatibility
-CMD ["/bin/bash"]
+# Entry point - run tests automatically
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

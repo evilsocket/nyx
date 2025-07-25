@@ -1286,6 +1286,429 @@ clean_linux_print_traces() {
     print_success "Print subsystem traces cleaned ($count items)"
 }
 
+# Extended Module: CI/CD Tools
+clean_linux_cicd_traces() {
+    print_info "Cleaning CI/CD tool artifacts..."
+    local count=0
+    
+    # Get all user home directories
+    local homes
+    if [ "$(id -u)" -eq 0 ]; then
+        homes=$(awk -F: '$3 >= 1000 && $3 < 65534 {print $6}' /etc/passwd)
+        homes="$homes /root"
+    else
+        homes="$HOME"
+    fi
+    
+    for home in $homes; do
+        if [ -d "$home" ]; then
+            # Jenkins artifacts
+            if safe_remove_tree "$home/.jenkins/workspace"; then
+                count=$((count + 1))
+                print_verbose "Cleaned Jenkins workspace: $home"
+            fi
+            
+            # GitLab Runner artifacts
+            if safe_remove "$home/.gitlab-runner/config.toml"; then
+                count=$((count + 1))
+                print_verbose "Cleaned GitLab Runner config: $home"
+            fi
+            
+            # GitHub Actions cache
+            if safe_remove_tree "$home/.cache/act"; then
+                count=$((count + 1))
+                print_verbose "Cleaned GitHub Actions cache: $home"
+            fi
+            
+            # CircleCI artifacts
+            if safe_remove "$home/.circleci/cli.yml"; then
+                count=$((count + 1))
+                print_verbose "Cleaned CircleCI config: $home"
+            fi
+            
+            # Travis CI artifacts
+            if safe_remove "$home/.travis/config.yml"; then
+                count=$((count + 1))
+                print_verbose "Cleaned Travis CI config: $home"
+            fi
+        fi
+    done
+    
+    CLEANED_COUNT=$((CLEANED_COUNT + count))
+    print_success "CI/CD tool artifacts cleaned ($count items)"
+}
+
+# Extended Module: IDS/IPS
+clean_linux_idsips_traces() {
+    print_info "Cleaning IDS/IPS artifacts..."
+    local count=0
+    
+    # Snort logs
+    for snort_log in /var/log/snort/*; do
+        if truncate_file "$snort_log"; then
+            count=$((count + 1))
+            print_verbose "Cleaned Snort: $snort_log"
+        fi
+    done
+    
+    # Suricata logs
+    for suricata_log in /var/log/suricata/*; do
+        if truncate_file "$suricata_log"; then
+            count=$((count + 1))
+            print_verbose "Cleaned Suricata: $suricata_log"
+        fi
+    done
+    
+    # OSSEC logs
+    for ossec_log in /var/ossec/logs/alerts/* /var/ossec/logs/*.log; do
+        if truncate_file "$ossec_log"; then
+            count=$((count + 1))
+            print_verbose "Cleaned OSSEC: $ossec_log"
+        fi
+    done
+    
+    # Fail2ban logs
+    for fail2ban_log in /var/log/fail2ban/*; do
+        if truncate_file "$fail2ban_log"; then
+            count=$((count + 1))
+            print_verbose "Cleaned Fail2ban: $fail2ban_log"
+        fi
+    done
+    
+    # Samhain logs
+    for samhain_log in /var/log/samhain/*; do
+        if truncate_file "$samhain_log"; then
+            count=$((count + 1))
+            print_verbose "Cleaned Samhain: $samhain_log"
+        fi
+    done
+    
+    CLEANED_COUNT=$((CLEANED_COUNT + count))
+    print_success "IDS/IPS artifacts cleaned ($count items)"
+}
+
+# Extended Module: Cryptocurrency
+clean_linux_crypto_traces() {
+    print_info "Cleaning cryptocurrency artifacts..."
+    local count=0
+    
+    # Get all user home directories
+    local homes
+    if [ "$(id -u)" -eq 0 ]; then
+        homes=$(awk -F: '$3 >= 1000 && $3 < 65534 {print $6}' /etc/passwd)
+        homes="$homes /root"
+    else
+        homes="$HOME"
+    fi
+    
+    for home in $homes; do
+        if [ -d "$home" ]; then
+            # Bitcoin artifacts
+            if safe_remove "$home/.bitcoin/bitcoin.conf"; then
+                count=$((count + 1))
+                print_verbose "Cleaned Bitcoin config: $home"
+            fi
+            
+            # Ethereum artifacts
+            if safe_remove_tree "$home/.ethereum/keystore"; then
+                count=$((count + 1))
+                print_verbose "Cleaned Ethereum keystore: $home"
+            fi
+            
+            # Monero artifacts
+            if safe_remove "$home/.monero/monero-wallet-cli.conf"; then
+                count=$((count + 1))
+                print_verbose "Cleaned Monero config: $home"
+            fi
+            
+            # Mining configs
+            if safe_remove_tree "$home/.config/xmrig"; then
+                count=$((count + 1))
+                print_verbose "Cleaned XMRig config: $home"
+            fi
+            
+            # Electrum wallet
+            if safe_remove_tree "$home/.electrum/wallets"; then
+                count=$((count + 1))
+                print_verbose "Cleaned Electrum wallets: $home"
+            fi
+        fi
+    done
+    
+    CLEANED_COUNT=$((CLEANED_COUNT + count))
+    print_success "Cryptocurrency artifacts cleaned ($count items)"
+}
+
+# Extended Module: Privacy Tools
+clean_linux_privacy_traces() {
+    print_info "Cleaning privacy tool artifacts..."
+    local count=0
+    
+    # Get all user home directories
+    local homes
+    if [ "$(id -u)" -eq 0 ]; then
+        homes=$(awk -F: '$3 >= 1000 && $3 < 65534 {print $6}' /etc/passwd)
+        homes="$homes /root"
+    else
+        homes="$HOME"
+    fi
+    
+    for home in $homes; do
+        if [ -d "$home" ]; then
+            # Tor Browser artifacts
+            if safe_remove_tree "$home/.tor-browser/profile.default"; then
+                count=$((count + 1))
+                print_verbose "Cleaned Tor Browser: $home"
+            fi
+            
+            # Tor config
+            if safe_remove "$home/.tor/torrc"; then
+                count=$((count + 1))
+                print_verbose "Cleaned Tor config: $home"
+            fi
+            
+            # I2P artifacts
+            if safe_remove "$home/.i2p/router.config"; then
+                count=$((count + 1))
+                print_verbose "Cleaned I2P config: $home"
+            fi
+            
+            # ProtonVPN artifacts
+            if safe_remove_tree "$home/.config/protonvpn"; then
+                count=$((count + 1))
+                print_verbose "Cleaned ProtonVPN: $home"
+            fi
+            
+            # Mullvad VPN artifacts
+            if safe_remove_tree "$home/.config/mullvad"; then
+                count=$((count + 1))
+                print_verbose "Cleaned Mullvad: $home"
+            fi
+            
+            # Tails persistence
+            if safe_remove_tree "$home/.config/tails"; then
+                count=$((count + 1))
+                print_verbose "Cleaned Tails config: $home"
+            fi
+        fi
+    done
+    
+    CLEANED_COUNT=$((CLEANED_COUNT + count))
+    print_success "Privacy tool artifacts cleaned ($count items)"
+}
+
+# Extended Module: Penetration Testing
+clean_linux_pentest_traces() {
+    print_info "Cleaning penetration testing artifacts..."
+    local count=0
+    
+    # Get all user home directories
+    local homes
+    if [ "$(id -u)" -eq 0 ]; then
+        homes=$(awk -F: '$3 >= 1000 && $3 < 65534 {print $6}' /etc/passwd)
+        homes="$homes /root"
+    else
+        homes="$HOME"
+    fi
+    
+    for home in $homes; do
+        if [ -d "$home" ]; then
+            # Burp Suite artifacts
+            if safe_remove_tree "$home/.BurpSuite"; then
+                count=$((count + 1))
+                print_verbose "Cleaned Burp Suite: $home"
+            fi
+            
+            # OWASP ZAP artifacts
+            if safe_remove_tree "$home/.ZAP"; then
+                count=$((count + 1))
+                print_verbose "Cleaned OWASP ZAP: $home"
+            fi
+            
+            # Cobalt Strike artifacts
+            if safe_remove_tree "$home/.cobaltstrike"; then
+                count=$((count + 1))
+                print_verbose "Cleaned Cobalt Strike: $home"
+            fi
+            
+            # Empire artifacts
+            if safe_remove_tree "$home/.empire"; then
+                count=$((count + 1))
+                print_verbose "Cleaned Empire: $home"
+            fi
+            
+            # BeEF artifacts
+            if safe_remove_tree "$home/.beef"; then
+                count=$((count + 1))
+                print_verbose "Cleaned BeEF: $home"
+            fi
+        fi
+    done
+    
+    CLEANED_COUNT=$((CLEANED_COUNT + count))
+    print_success "Penetration testing artifacts cleaned ($count items)"
+}
+
+# Extended Module: OSINT Tools
+clean_linux_osint_traces() {
+    print_info "Cleaning OSINT tool artifacts..."
+    local count=0
+    
+    # Get all user home directories
+    local homes
+    if [ "$(id -u)" -eq 0 ]; then
+        homes=$(awk -F: '$3 >= 1000 && $3 < 65534 {print $6}' /etc/passwd)
+        homes="$homes /root"
+    else
+        homes="$HOME"
+    fi
+    
+    for home in $homes; do
+        if [ -d "$home" ]; then
+            # Maltego artifacts
+            if safe_remove_tree "$home/.maltego"; then
+                count=$((count + 1))
+                print_verbose "Cleaned Maltego: $home"
+            fi
+            
+            # SpiderFoot artifacts
+            if safe_remove_tree "$home/.spiderfoot"; then
+                count=$((count + 1))
+                print_verbose "Cleaned SpiderFoot: $home"
+            fi
+            
+            # theHarvester artifacts
+            if safe_remove_tree "$home/.theharvester"; then
+                count=$((count + 1))
+                print_verbose "Cleaned theHarvester: $home"
+            fi
+            
+            # Recon-ng artifacts
+            if safe_remove_tree "$home/.recon-ng"; then
+                count=$((count + 1))
+                print_verbose "Cleaned Recon-ng: $home"
+            fi
+            
+            # Shodan artifacts
+            if safe_remove_tree "$home/.shodan"; then
+                count=$((count + 1))
+                print_verbose "Cleaned Shodan: $home"
+            fi
+        fi
+    done
+    
+    CLEANED_COUNT=$((CLEANED_COUNT + count))
+    print_success "OSINT tool artifacts cleaned ($count items)"
+}
+
+# Extended Module: IoT/Smart Home
+clean_linux_iot_traces() {
+    print_info "Cleaning IoT/Smart Home artifacts..."
+    local count=0
+    
+    # Get all user home directories
+    local homes
+    if [ "$(id -u)" -eq 0 ]; then
+        homes=$(awk -F: '$3 >= 1000 && $3 < 65534 {print $6}' /etc/passwd)
+        homes="$homes /root"
+    else
+        homes="$HOME"
+    fi
+    
+    for home in $homes; do
+        if [ -d "$home" ]; then
+            # Home Assistant artifacts
+            if safe_remove_tree "$home/.homeassistant"; then
+                count=$((count + 1))
+                print_verbose "Cleaned Home Assistant: $home"
+            fi
+            
+            # MQTT broker artifacts
+            if safe_remove_tree "$home/.mosquitto"; then
+                count=$((count + 1))
+                print_verbose "Cleaned Mosquitto: $home"
+            fi
+            
+            # Node-RED artifacts
+            if safe_remove_tree "$home/.node-red"; then
+                count=$((count + 1))
+                print_verbose "Cleaned Node-RED: $home"
+            fi
+            
+            # OpenHAB artifacts
+            if safe_remove_tree "$home/.openhab"; then
+                count=$((count + 1))
+                print_verbose "Cleaned OpenHAB: $home"
+            fi
+        fi
+    done
+    
+    CLEANED_COUNT=$((CLEANED_COUNT + count))
+    print_success "IoT/Smart Home artifacts cleaned ($count items)"
+}
+
+# Extended Module: ML/AI Frameworks
+clean_linux_ml_traces() {
+    print_info "Cleaning ML/AI framework artifacts..."
+    local count=0
+    
+    # Get all user home directories
+    local homes
+    if [ "$(id -u)" -eq 0 ]; then
+        homes=$(awk -F: '$3 >= 1000 && $3 < 65534 {print $6}' /etc/passwd)
+        homes="$homes /root"
+    else
+        homes="$HOME"
+    fi
+    
+    for home in $homes; do
+        if [ -d "$home" ]; then
+            # Jupyter artifacts
+            if safe_remove "$home/.jupyter/jupyter_notebook_config.py"; then
+                count=$((count + 1))
+                print_verbose "Cleaned Jupyter config: $home"
+            fi
+            if safe_remove_tree "$home/.ipynb_checkpoints"; then
+                count=$((count + 1))
+                print_verbose "Cleaned Jupyter checkpoints: $home"
+            fi
+            
+            # TensorBoard artifacts
+            if safe_remove_tree "$home/.tensorboard"; then
+                count=$((count + 1))
+                print_verbose "Cleaned TensorBoard: $home"
+            fi
+            
+            # PyTorch artifacts
+            if safe_remove_tree "$home/.cache/torch"; then
+                count=$((count + 1))
+                print_verbose "Cleaned PyTorch cache: $home"
+            fi
+            
+            # Keras artifacts
+            if safe_remove_tree "$home/.keras"; then
+                count=$((count + 1))
+                print_verbose "Cleaned Keras: $home"
+            fi
+            
+            # MLflow artifacts
+            if safe_remove_tree "$home/.mlflow"; then
+                count=$((count + 1))
+                print_verbose "Cleaned MLflow: $home"
+            fi
+            
+            # Weights & Biases artifacts
+            if safe_remove_tree "$home/.wandb"; then
+                count=$((count + 1))
+                print_verbose "Cleaned Weights & Biases: $home"
+            fi
+        fi
+    done
+    
+    CLEANED_COUNT=$((CLEANED_COUNT + count))
+    print_success "ML/AI framework artifacts cleaned ($count items)"
+}
+
 # Run cleaning modules based on OS
 run_cleaners() {
     case "$OS_TYPE" in
@@ -1328,6 +1751,32 @@ run_cleaners() {
             fi
             if [ -z "$MODULES" ] || echo "$MODULES" | grep -q "print"; then
                 clean_linux_print_traces
+            fi
+            
+            # New extended modules
+            if [ -z "$MODULES" ] || echo "$MODULES" | grep -q "cicd"; then
+                clean_linux_cicd_traces
+            fi
+            if [ -z "$MODULES" ] || echo "$MODULES" | grep -q "idsips"; then
+                clean_linux_idsips_traces
+            fi
+            if [ -z "$MODULES" ] || echo "$MODULES" | grep -q "crypto"; then
+                clean_linux_crypto_traces
+            fi
+            if [ -z "$MODULES" ] || echo "$MODULES" | grep -q "privacy"; then
+                clean_linux_privacy_traces
+            fi
+            if [ -z "$MODULES" ] || echo "$MODULES" | grep -q "pentest"; then
+                clean_linux_pentest_traces
+            fi
+            if [ -z "$MODULES" ] || echo "$MODULES" | grep -q "osint"; then
+                clean_linux_osint_traces
+            fi
+            if [ -z "$MODULES" ] || echo "$MODULES" | grep -q "iot"; then
+                clean_linux_iot_traces
+            fi
+            if [ -z "$MODULES" ] || echo "$MODULES" | grep -q "ml"; then
+                clean_linux_ml_traces
             fi
             ;;
         macos)
@@ -1377,7 +1826,16 @@ list_modules() {
             echo "  ssh      - SSH operational traces and logs"
             echo "  print    - CUPS print subsystem logs"
             echo "  systemd  - Additional systemd artifacts"
-            echo "  crash    - Crash dumps and core files"
+            echo ""
+            echo "Security/Development modules:"
+            echo "  cicd     - CI/CD tools (Jenkins, GitLab Runner, GitHub Actions)"
+            echo "  idsips   - IDS/IPS logs (Snort, Suricata, OSSEC, Fail2ban)"
+            echo "  crypto   - Cryptocurrency (Bitcoin, Ethereum, Monero, wallets)"
+            echo "  privacy  - Privacy tools (Tor, I2P, ProtonVPN, Mullvad)"
+            echo "  pentest  - Penetration testing (Burp Suite, ZAP, Cobalt Strike)"
+            echo "  osint    - OSINT tools (Maltego, SpiderFoot, theHarvester)"
+            echo "  iot      - IoT/Smart Home (Home Assistant, MQTT, Node-RED)"
+            echo "  ml       - ML/AI frameworks (Jupyter, TensorBoard, PyTorch)"
             ;;
         macos)
             echo "Basic modules:"

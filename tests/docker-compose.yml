@@ -9,5 +9,4 @@ services:
     environment:
       - TERM=xterm-256color
     stdin_open: false
-    tty: true
-    entrypoint: [ "/usr/local/bin/entrypoint.sh" ]
+    tty: false

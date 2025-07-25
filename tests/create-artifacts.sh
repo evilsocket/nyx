@@ -1171,6 +1171,265 @@ DeletionDate=$(date +%Y-%m-%dT%H:%M:%S)" > ~/.local/share/Trash/info/sensitive.t
     echo "</Configuration>" >> ~/.config/KeePass/KeePass.config.xml
     
     echo "[✓] Productivity tool artifacts created"
+    
+    echo "[*] Creating CI/CD tool artifacts..."
+    
+    # Jenkins artifacts
+    mkdir -p ~/.jenkins/workspace/evil-job
+    echo "Building malicious payload..." > ~/.jenkins/workspace/evil-job/build.log
+    echo "Deploying to production..." >> ~/.jenkins/workspace/evil-job/build.log
+    
+    # GitLab Runner artifacts
+    mkdir -p ~/.gitlab-runner
+    echo "concurrent = 1" > ~/.gitlab-runner/config.toml
+    echo "[[runners]]" >> ~/.gitlab-runner/config.toml
+    echo "  name = \"evil-runner\"" >> ~/.gitlab-runner/config.toml
+    echo "  url = \"https://gitlab.evil.com\"" >> ~/.gitlab-runner/config.toml
+    echo "  token = \"EVIL_RUNNER_TOKEN\"" >> ~/.gitlab-runner/config.toml
+    
+    # GitHub Actions cache
+    mkdir -p ~/.cache/act
+    echo "Cached evil workflow data" > ~/.cache/act/evil-workflow-cache
+    
+    # CircleCI artifacts
+    mkdir -p ~/.circleci
+    echo "version: 2" > ~/.circleci/cli.yml
+    echo "host: https://circleci.evil.com" >> ~/.circleci/cli.yml
+    echo "token: EVIL_CIRCLECI_TOKEN" >> ~/.circleci/cli.yml
+    
+    # Travis CI artifacts
+    mkdir -p ~/.travis
+    echo "endpoint: https://api.travis-ci.evil.com" > ~/.travis/config.yml
+    echo "access_token: EVIL_TRAVIS_TOKEN" >> ~/.travis/config.yml
+    
+    echo "[✓] CI/CD tool artifacts created"
+    
+    echo "[*] Creating IDS/IPS artifacts..."
+    
+    # Snort logs
+    sudo bash -c '
+        mkdir -p /var/log/snort
+        echo "[**] [1:2000001:1] MALWARE-CNC Evil malware command and control traffic [**]" > /var/log/snort/alert
+        echo "[Priority: 1]" >> /var/log/snort/alert
+        echo "$(date) 10.0.0.1:4444 -> 192.168.1.100:52341" >> /var/log/snort/alert
+    '
+    
+    # Suricata logs
+    sudo bash -c '
+        mkdir -p /var/log/suricata
+        echo "{\"timestamp\":\"$(date)\",\"event_type\":\"alert\",\"src_ip\":\"10.0.0.1\",\"dest_ip\":\"192.168.1.100\",\"alert\":{\"signature\":\"ET MALWARE Evil Backdoor CnC Beacon\"}}" > /var/log/suricata/eve.json
+    '
+    
+    # OSSEC logs
+    sudo bash -c '
+        mkdir -p /var/ossec/logs/alerts
+        echo "$(date) ossec: Alert Level: 10; Rule: 100001 - Evil activity detected" > /var/ossec/logs/alerts/alerts.log
+        echo "Src IP: 10.0.0.1" >> /var/ossec/logs/alerts/alerts.log
+    '
+    
+    # Fail2ban logs
+    sudo bash -c '
+        mkdir -p /var/log/fail2ban
+        echo "$(date) fail2ban.actions: WARNING [ssh] Ban 10.0.0.1" > /var/log/fail2ban/fail2ban.log
+        echo "$(date) fail2ban.filter: INFO [ssh] Found 10.0.0.1 - $(date)" >> /var/log/fail2ban/fail2ban.log
+    '
+    
+    # Samhain logs
+    sudo bash -c '
+        mkdir -p /var/log/samhain
+        echo "[$(date)] CRIT: [ReadOnly] path=/etc/passwd, mode_old=0644, mode_new=0666" > /var/log/samhain/samhain.log
+    '
+    
+    echo "[✓] IDS/IPS artifacts created"
+    
+    echo "[*] Creating cryptocurrency artifacts..."
+    
+    # Bitcoin artifacts
+    mkdir -p ~/.bitcoin
+    echo "rpcuser=evil_miner" > ~/.bitcoin/bitcoin.conf
+    echo "rpcpassword=EVIL_BITCOIN_PASSWORD" >> ~/.bitcoin/bitcoin.conf
+    echo "server=1" >> ~/.bitcoin/bitcoin.conf
+    
+    # Ethereum artifacts
+    mkdir -p ~/.ethereum/keystore
+    echo '{"address":"0xEVIL123456789","crypto":{"cipher":"aes-128-ctr"}}' > ~/.ethereum/keystore/UTC--2024-01-01T12-00-00.000000000Z--EVIL
+    
+    # Monero artifacts
+    mkdir -p ~/.monero
+    echo "wallet_path=/home/testuser/.monero/evil_wallet" > ~/.monero/monero-wallet-cli.conf
+    echo "daemon_address=evil-pool.com:18081" >> ~/.monero/monero-wallet-cli.conf
+    
+    # Mining pool configs
+    mkdir -p ~/.config/xmrig
+    echo "{" > ~/.config/xmrig/config.json
+    echo "    \"pools\": [{" >> ~/.config/xmrig/config.json
+    echo "        \"url\": \"evil-mining-pool.com:3333\"," >> ~/.config/xmrig/config.json
+    echo "        \"user\": \"EVIL_WALLET_ADDRESS\"" >> ~/.config/xmrig/config.json
+    echo "    }]" >> ~/.config/xmrig/config.json
+    echo "}" >> ~/.config/xmrig/config.json
+    
+    # Crypto wallet traces
+    mkdir -p ~/.electrum/wallets
+    echo '{"seed": "evil seed phrase for wallet recovery"}' > ~/.electrum/wallets/default_wallet
+    
+    echo "[✓] Cryptocurrency artifacts created"
+    
+    echo "[*] Creating privacy tool artifacts..."
+    
+    # Tor Browser artifacts
+    mkdir -p ~/.tor-browser/profile.default
+    echo "# Tor Browser prefs" > ~/.tor-browser/profile.default/prefs.js
+    echo "user_pref(\"network.proxy.socks\", \"127.0.0.1\");" >> ~/.tor-browser/profile.default/prefs.js
+    echo "user_pref(\"network.proxy.socks_port\", 9150);" >> ~/.tor-browser/profile.default/prefs.js
+    
+    # Tor config
+    mkdir -p ~/.tor
+    echo "SocksPort 9050" > ~/.tor/torrc
+    echo "ControlPort 9051" >> ~/.tor/torrc
+    echo "HashedControlPassword EVIL_TOR_PASSWORD_HASH" >> ~/.tor/torrc
+    
+    # I2P artifacts
+    mkdir -p ~/.i2p
+    echo "router.config=evil.i2p" > ~/.i2p/router.config
+    echo "i2np.udp.port=8887" >> ~/.i2p/router.config
+    
+    # ProtonVPN artifacts
+    mkdir -p ~/.config/protonvpn
+    echo "[USER]" > ~/.config/protonvpn/pvpn-cli.cfg
+    echo "username = evil_user" >> ~/.config/protonvpn/pvpn-cli.cfg
+    echo "tier = 2" >> ~/.config/protonvpn/pvpn-cli.cfg
+    
+    # Mullvad VPN artifacts
+    mkdir -p ~/.config/mullvad
+    echo "account = 1234567890123456" > ~/.config/mullvad/account
+    
+    # Tails persistence
+    mkdir -p ~/.config/tails
+    echo "persistence_enabled=true" > ~/.config/tails/persistence.conf
+    
+    echo "[✓] Privacy tool artifacts created"
+    
+    echo "[*] Creating penetration testing artifacts..."
+    
+    # Burp Suite artifacts
+    mkdir -p ~/.BurpSuite
+    echo "# Burp project file" > ~/.BurpSuite/evil-project.burp
+    echo "target.host=victim.com" >> ~/.BurpSuite/evil-project.burp
+    
+    # OWASP ZAP artifacts
+    mkdir -p ~/.ZAP/session
+    echo "# ZAP Session" > ~/.ZAP/session/evil-scan.session
+    echo "target=http://victim.com" >> ~/.ZAP/session/evil-scan.session
+    
+    # Cobalt Strike artifacts
+    mkdir -p ~/.cobaltstrike
+    echo "listeners=" > ~/.cobaltstrike/listeners.prop
+    echo "listeners.Listener1.name=evil-listener" >> ~/.cobaltstrike/listeners.prop
+    echo "listeners.Listener1.payload=windows/beacon_https/reverse_https" >> ~/.cobaltstrike/listeners.prop
+    
+    # Empire artifacts
+    mkdir -p ~/.empire
+    echo "username: evil_operator" > ~/.empire/config.yaml
+    echo "api_key: EVIL_EMPIRE_API_KEY" >> ~/.empire/config.yaml
+    
+    # BeEF artifacts
+    mkdir -p ~/.beef
+    echo "beef:" > ~/.beef/config.yaml
+    echo "  credentials:" >> ~/.beef/config.yaml
+    echo "    user: evil" >> ~/.beef/config.yaml
+    echo "    passwd: EVIL_BEEF_PASSWORD" >> ~/.beef/config.yaml
+    
+    echo "[✓] Penetration testing artifacts created"
+    
+    echo "[*] Creating OSINT tool artifacts..."
+    
+    # Maltego artifacts
+    mkdir -p ~/.maltego/v4
+    echo "# Maltego config" > ~/.maltego/v4/config.mtz
+    echo "transform.sets=evil-transforms" >> ~/.maltego/v4/config.mtz
+    
+    # SpiderFoot artifacts
+    mkdir -p ~/.spiderfoot
+    echo "[DATABASE]" > ~/.spiderfoot/config.ini
+    echo "server = evil-scan-results.db" >> ~/.spiderfoot/config.ini
+    
+    # theHarvester artifacts
+    mkdir -p ~/.theharvester
+    echo "domain: victim.com" > ~/.theharvester/results.xml
+    echo "emails: admin@victim.com, user@victim.com" >> ~/.theharvester/results.xml
+    
+    # Recon-ng artifacts
+    mkdir -p ~/.recon-ng/workspaces/default
+    echo "CREATE TABLE IF NOT EXISTS domains (domain TEXT)" > ~/.recon-ng/workspaces/default/data.db
+    
+    # Shodan artifacts
+    mkdir -p ~/.shodan
+    echo "api_key = EVIL_SHODAN_API_KEY" > ~/.shodan/api_key
+    
+    echo "[✓] OSINT tool artifacts created"
+    
+    echo "[*] Creating IoT/Smart Home artifacts..."
+    
+    # Home Assistant artifacts
+    mkdir -p ~/.homeassistant
+    echo "homeassistant:" > ~/.homeassistant/configuration.yaml
+    echo "  name: Evil Home" >> ~/.homeassistant/configuration.yaml
+    echo "  latitude: 10.0001" >> ~/.homeassistant/configuration.yaml
+    echo "  longitude: 10.0001" >> ~/.homeassistant/configuration.yaml
+    
+    # MQTT broker artifacts
+    mkdir -p ~/.mosquitto
+    echo "listener 1883" > ~/.mosquitto/mosquitto.conf
+    echo "allow_anonymous true" >> ~/.mosquitto/mosquitto.conf
+    echo "password_file /home/testuser/.mosquitto/passwd" >> ~/.mosquitto/mosquitto.conf
+    
+    # Node-RED artifacts
+    mkdir -p ~/.node-red
+    echo "{" > ~/.node-red/flows.json
+    echo "    \"flows\": [{" >> ~/.node-red/flows.json
+    echo "        \"type\": \"mqtt-broker\"," >> ~/.node-red/flows.json
+    echo "        \"broker\": \"evil-iot-broker.com\"" >> ~/.node-red/flows.json
+    echo "    }]" >> ~/.node-red/flows.json
+    echo "}" >> ~/.node-red/flows.json
+    
+    # OpenHAB artifacts
+    mkdir -p ~/.openhab
+    echo "# OpenHAB config" > ~/.openhab/openhab.cfg
+    echo "mqtt:broker.url=tcp://evil-broker:1883" >> ~/.openhab/openhab.cfg
+    
+    echo "[✓] IoT/Smart Home artifacts created"
+    
+    echo "[*] Creating ML/AI framework artifacts..."
+    
+    # Jupyter artifacts
+    mkdir -p ~/.jupyter ~/.ipynb_checkpoints
+    echo "c.NotebookApp.token = 'EVIL_JUPYTER_TOKEN'" > ~/.jupyter/jupyter_notebook_config.py
+    echo "{\"cells\": [{\"source\": \"import os; os.system('whoami')\"}]}" > ~/.ipynb_checkpoints/evil-notebook-checkpoint.ipynb
+    
+    # TensorBoard artifacts
+    mkdir -p ~/.tensorboard/logs/evil-model
+    echo "TensorBoard log data" > ~/.tensorboard/logs/evil-model/events.out.tfevents.12345
+    
+    # PyTorch artifacts
+    mkdir -p ~/.cache/torch/hub
+    echo "Evil model checkpoint" > ~/.cache/torch/hub/evil_model.pth
+    
+    # Keras artifacts
+    mkdir -p ~/.keras/models
+    echo "Evil Keras model" > ~/.keras/models/evil_model.h5
+    
+    # MLflow artifacts
+    mkdir -p ~/.mlflow
+    echo "artifact_location: file:///home/testuser/.mlflow/artifacts" > ~/.mlflow/config
+    echo "tracking_uri: http://evil-mlflow-server.com" >> ~/.mlflow/config
+    
+    # Weights & Biases artifacts
+    mkdir -p ~/.wandb
+    echo "[default]" > ~/.wandb/settings
+    echo "api_key = EVIL_WANDB_API_KEY" >> ~/.wandb/settings
+    echo "base_url = https://api.wandb.evil.com" >> ~/.wandb/settings
+    
+    echo "[✓] ML/AI framework artifacts created"
 }
 
 # Count artifacts before creation

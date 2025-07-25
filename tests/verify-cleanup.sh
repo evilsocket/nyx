@@ -818,6 +818,162 @@ check_not_exists ~/.config/evolution/sources/sources.db "Evolution sources"
 # KeePass artifacts
 check_not_exists ~/.config/KeePass/KeePass.config.xml "KeePass config"
 
+# CI/CD Tool Artifacts
+echo ""
+echo "[*] Checking CI/CD tool artifacts..."
+
+# Jenkins artifacts
+check_not_exists ~/.jenkins/workspace/evil-job/build.log "Jenkins build log"
+
+# GitLab Runner artifacts
+check_not_exists ~/.gitlab-runner/config.toml "GitLab Runner config"
+
+# GitHub Actions artifacts
+check_not_exists ~/.cache/act/evil-workflow-cache "GitHub Actions cache"
+
+# CircleCI artifacts
+check_not_exists ~/.circleci/cli.yml "CircleCI config"
+
+# Travis CI artifacts
+check_not_exists ~/.travis/config.yml "Travis CI config"
+
+# IDS/IPS Artifacts
+echo ""
+echo "[*] Checking IDS/IPS artifacts..."
+
+# Snort logs
+check_log_no_marker /var/log/snort/alert "MALWARE-CNC Evil malware" "Snort alerts"
+
+# Suricata logs
+check_log_no_marker /var/log/suricata/eve.json "ET MALWARE Evil Backdoor" "Suricata alerts"
+
+# OSSEC logs
+check_log_no_marker /var/ossec/logs/alerts/alerts.log "Evil activity detected" "OSSEC alerts"
+
+# Fail2ban logs
+check_log_no_marker /var/log/fail2ban/fail2ban.log "Ban 10.0.0.1" "Fail2ban log"
+
+# Samhain logs
+check_log_no_marker /var/log/samhain/samhain.log "path=/etc/passwd" "Samhain log"
+
+# Cryptocurrency Artifacts
+echo ""
+echo "[*] Checking cryptocurrency artifacts..."
+
+# Bitcoin artifacts
+check_not_exists ~/.bitcoin/bitcoin.conf "Bitcoin config"
+
+# Ethereum artifacts
+check_not_exists ~/.ethereum/keystore/UTC--2024-01-01T12-00-00.000000000Z--EVIL "Ethereum keystore"
+
+# Monero artifacts
+check_not_exists ~/.monero/monero-wallet-cli.conf "Monero wallet config"
+
+# Mining pool configs
+check_not_exists ~/.config/xmrig/config.json "XMRig mining config"
+
+# Crypto wallet traces
+check_not_exists ~/.electrum/wallets/default_wallet "Electrum wallet"
+
+# Privacy Tool Artifacts
+echo ""
+echo "[*] Checking privacy tool artifacts..."
+
+# Tor Browser artifacts
+check_not_exists ~/.tor-browser/profile.default/prefs.js "Tor Browser prefs"
+
+# Tor config
+check_not_exists ~/.tor/torrc "Tor config"
+
+# I2P artifacts
+check_not_exists ~/.i2p/router.config "I2P config"
+
+# ProtonVPN artifacts
+check_not_exists ~/.config/protonvpn/pvpn-cli.cfg "ProtonVPN config"
+
+# Mullvad VPN artifacts
+check_not_exists ~/.config/mullvad/account "Mullvad account"
+
+# Tails persistence
+check_not_exists ~/.config/tails/persistence.conf "Tails persistence config"
+
+# Penetration Testing Artifacts
+echo ""
+echo "[*] Checking penetration testing artifacts..."
+
+# Burp Suite artifacts
+check_not_exists ~/.BurpSuite/evil-project.burp "Burp Suite project"
+
+# OWASP ZAP artifacts
+check_not_exists ~/.ZAP/session/evil-scan.session "OWASP ZAP session"
+
+# Cobalt Strike artifacts
+check_not_exists ~/.cobaltstrike/listeners.prop "Cobalt Strike listeners"
+
+# Empire artifacts
+check_not_exists ~/.empire/config.yaml "Empire config"
+
+# BeEF artifacts
+check_not_exists ~/.beef/config.yaml "BeEF config"
+
+# OSINT Tool Artifacts
+echo ""
+echo "[*] Checking OSINT tool artifacts..."
+
+# Maltego artifacts
+check_not_exists ~/.maltego/v4/config.mtz "Maltego config"
+
+# SpiderFoot artifacts
+check_not_exists ~/.spiderfoot/config.ini "SpiderFoot config"
+
+# theHarvester artifacts
+check_not_exists ~/.theharvester/results.xml "theHarvester results"
+
+# Recon-ng artifacts
+check_not_exists ~/.recon-ng/workspaces/default/data.db "Recon-ng database"
+
+# Shodan artifacts
+check_not_exists ~/.shodan/api_key "Shodan API key"
+
+# IoT/Smart Home Artifacts
+echo ""
+echo "[*] Checking IoT/Smart Home artifacts..."
+
+# Home Assistant artifacts
+check_not_exists ~/.homeassistant/configuration.yaml "Home Assistant config"
+
+# MQTT broker artifacts
+check_not_exists ~/.mosquitto/mosquitto.conf "Mosquitto config"
+
+# Node-RED artifacts
+check_not_exists ~/.node-red/flows.json "Node-RED flows"
+
+# OpenHAB artifacts
+check_not_exists ~/.openhab/openhab.cfg "OpenHAB config"
+
+# ML/AI Framework Artifacts
+echo ""
+echo "[*] Checking ML/AI framework artifacts..."
+
+# Jupyter artifacts
+check_not_exists ~/.jupyter/jupyter_notebook_config.py "Jupyter config"
+check_not_exists ~/.ipynb_checkpoints/evil-notebook-checkpoint.ipynb "Jupyter checkpoint"
+
+# TensorBoard artifacts
+check_not_exists ~/.tensorboard/logs/evil-model/events.out.tfevents.12345 "TensorBoard logs"
+
+# PyTorch artifacts
+check_not_exists ~/.cache/torch/hub/evil_model.pth "PyTorch model cache"
+
+# Keras artifacts
+check_not_exists ~/.keras/models/evil_model.h5 "Keras model"
+
+# MLflow artifacts
+check_not_exists ~/.mlflow/config "MLflow config"
+
+# Weights & Biases artifacts
+check_not_exists ~/.wandb/settings "Weights & Biases settings"
+
 # Extended Verification Summary
 echo ""
 echo "[*] Extended verification complete..."

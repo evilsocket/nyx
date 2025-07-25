@@ -1,83 +1,74 @@
 #!/bin/bash
-# Entrypoint script for nyx Docker tests
+# Entrypoint script for Docker test container
 
 set -e
 
-# Function to run with timeout
+echo "================================"
+echo "Nyx Docker Test - Starting"
+echo "================================"
+echo ""
+
+# Function to run a command with timeout and capture output
 run_with_timeout() {
-    local timeout=$1
-    shift
-    local cmd="$@"
+    local cmd="$1"
+    local timeout="$2"
+    local desc="$3"
     
     echo "[*] Running: $cmd (timeout: ${timeout}s)"
     
     # Run command with timeout
-    timeout --preserve-status --signal=TERM --kill-after=10 $timeout bash -c "$cmd"
-    local exit_code=$?
-    
-    if [ $exit_code -eq 124 ]; then
-        echo "[ERROR] Command timed out after ${timeout}s"
-        return 1
-    elif [ $exit_code -eq 137 ]; then
-        echo "[ERROR] Command was killed"
-        return 1
+    if timeout "$timeout" bash -c "$cmd" 2>&1; then
+        return 0
+    else
+        local exit_code=$?
+        if [ $exit_code -eq 124 ]; then
+            echo "[ERROR] Command timed out after ${timeout}s"
+        else
+            echo "[ERROR] Command failed with exit code: $exit_code"
+        fi
+        return $exit_code
     fi
-    
-    return $exit_code
 }
 
-# Main test sequence
-main() {
-    echo "================================"
-    echo "Nyx Docker Test - Starting"
-    echo "================================"
-    echo ""
-    
-    # Phase 1: Create artifacts
-    echo "================================"
-    echo "Phase 1: Creating Artifacts"
-    echo "================================"
-    echo ""
-    
-    if ! run_with_timeout 180 "su - testuser -c 'create-artifacts.sh'"; then
-        echo "[ERROR] Failed to create artifacts"
-        exit 1
-    fi
-    
-    echo ""
-    echo "================================"
-    echo "Phase 2: Running Cleaner"
-    echo "================================"
-    echo ""
-    
-    # Run cleaner as root with force flag
-    if ! run_with_timeout 600 "/usr/local/bin/nyx.sh --force"; then
-        echo "[ERROR] Nyx cleaner failed"
-        exit 1
-    fi
-    
-    echo ""
-    echo "================================"
-    echo "Phase 3: Verifying Cleanup"
-    echo "================================"
-    echo ""
-    
-    # Verify cleanup as testuser
-    if ! run_with_timeout 180 "su - testuser -c 'verify-cleanup.sh'"; then
-        echo "[ERROR] Verification failed"
-        exit 1
-    fi
-    
-    echo ""
-    echo "================================"
-    echo "Test Complete - All Passed!"
-    echo "================================"
-    
-    exit 0
-}
+# Phase 1: Create artifacts
+echo "================================"
+echo "Phase 1: Creating Artifacts"
+echo "================================"
+echo ""
 
-# Trap to ensure we don't hang
-trap 'echo "[TRAP] Caught signal, exiting..."; exit 1' SIGTERM SIGINT
+if ! run_with_timeout "su - testuser -c 'create-artifacts.sh'" 180 "Create artifacts"; then
+    echo "[ERROR] Failed to create artifacts"
+    exit 1
+fi
 
-# Run main with overall timeout
-exec timeout --preserve-status --signal=TERM --kill-after=10 300 bash -c "$(declare -f run_with_timeout); $(declare -f main); main"
+echo ""
+echo "================================"
+echo "Phase 2: Running Cleaner"
+echo "================================"
+echo ""
+
+# Run nyx.sh as root with force flag
+if ! run_with_timeout "/usr/local/bin/nyx.sh --force" 600 "Run nyx cleaner"; then
+    echo "[ERROR] Failed to run nyx cleaner"
+    exit 2
+fi
+
+echo ""
+echo "================================"
+echo "Phase 3: Verifying Cleanup"
+echo "================================"
+echo ""
+
+# Verify cleanup
+if ! run_with_timeout "/usr/local/bin/verify-cleanup.sh" 300 "Verify cleanup"; then
+    echo "[ERROR] Verification failed"
+    exit 3
+fi
+
+echo ""
+echo "================================"
+echo "Test Complete - All Passed!"
+echo "================================"
+echo ""
+
+exit 0
