@@ -14,13 +14,23 @@ if ! docker info >/dev/null 2>&1; then
     exit 1
 fi
 
+# Detect docker compose command (v1 vs v2)
+if command -v docker-compose >/dev/null 2>&1; then
+    DOCKER_COMPOSE="docker-compose"
+elif docker compose version >/dev/null 2>&1; then
+    DOCKER_COMPOSE="docker compose"
+else
+    echo "Error: docker-compose not found. Please install Docker Compose."
+    exit 1
+fi
+
 # Clean up any existing container
 echo "[*] Cleaning up existing containers..."
-docker-compose down 2>/dev/null || true
+$DOCKER_COMPOSE down 2>/dev/null || true
 
 # Build the Docker image
 echo "[*] Building Docker image..."
-docker-compose build
+$DOCKER_COMPOSE build
 
 # Start the container and run tests
 echo ""
@@ -29,7 +39,7 @@ echo "[*] Starting test container and running tests..."
 # Run the container with the entrypoint script
 # The container will execute the test sequence and exit with appropriate code
 EXIT_CODE=0
-docker-compose run --rm nyx-test || EXIT_CODE=$?
+$DOCKER_COMPOSE run --rm nyx-test || EXIT_CODE=$?
 
 # No need for manual cleanup as --rm removes the container
 
