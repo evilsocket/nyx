@@ -14,12 +14,12 @@ The following table details which artifacts are cleaned by each module:
 
 | OS | Module | Artifacts |
 |---|---|---|
-| **Linux** | `shell` | Shell history files (bash, zsh, python, mysql, etc.), command histories, recently used files |
-| **Linux** | `logs` | System logs (auth, syslog, kernel, boot, package managers), web server logs, journald |
+| **Linux** | `shell` | Shell history files (bash, zsh, python, mysql, redis, mongo, docker, IPython, Ruby IRB, PHP, Perl, Erlang, Lua, Julia, Scala, Haskell, Octave, MATLAB, etc.), command histories, recently used files |
+| **Linux** | `logs` | System logs (auth, syslog, kernel, boot, package managers), web server logs (Apache, Nginx), journald, database logs (MySQL, PostgreSQL, Redis, MongoDB), VPN/proxy logs (OpenVPN, Squid), mail server logs (Postfix, Dovecot), monitoring logs (Elasticsearch, Logstash, Kibana), sysstat |
 | **Linux** | `audit` | Audit logs, search logs, in-kernel audit rules |
 | **Linux** | `temp` | Scripts in temp dirs, hidden files, thumbnail caches, core dumps, crash reports, systemd coredumps, trash |
-| **Linux** | `network` | ARP cache, NetworkManager connections, DHCP leases |
-| **Linux** | `user` | Login records, thumbnails, GTK bookmarks, GNOME Tracker, Zeitgeist, editor traces (VS Code, JetBrains) |
+| **Linux** | `network` | ARP cache, NetworkManager connections, DHCP leases, database data files (MySQL binary logs, InnoDB logs), VPN configs (OpenVPN, WireGuard), mail server spool files, iptables rules |
+| **Linux** | `user` | Login records, thumbnails, GTK bookmarks, GNOME Tracker, Zeitgeist, editor traces (VS Code, JetBrains), development tools (Git, SVN, Mercurial, Maven, Gradle, npm, pip, Cargo), cloud services (AWS, Google Cloud, Azure, Kubernetes, Terraform), monitoring tools (Prometheus, Grafana), backup tools (Rsync, Restic, Borg, Duplicity), security tools (Metasploit, Nmap, Aircrack-ng, John the Ripper, Hashcat), messaging/chat (IRC, Weechat, Pidgin, Discord, Slack), virtualization (VMware, VirtualBox, QEMU, Vagrant), network analysis (Wireshark, tcpdump, Ettercap), forensic analysis (Autopsy, Volatility, Sleuth Kit, Foremost), remote access (RDP, VNC, TeamViewer, AnyDesk), system monitoring (htop, Nagios, Zabbix), games/entertainment (Steam, Minecraft, Discord), file sharing (Transmission, qBittorrent, Deluge, aMule), multimedia (VLC, Audacity, GIMP, OBS Studio), productivity (LibreOffice, Thunderbird, Evolution, KeePass) |
 | **Linux** | `package` | Package caches and logs (APT, YUM, DNF, Pacman) |
 | **Linux** | `browser` | Firefox (cache, storage, databases), Chrome/Chromium (history, cookies, cache) |
 | **Linux** | `ssh` | SSH known_hosts, connection logs, auth log entries |

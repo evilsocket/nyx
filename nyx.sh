@@ -203,12 +203,47 @@ clean_linux_shell_history() {
                        .fish_history .python_history .mysql_history .psql_history \
                        .sqlite_history .rediscli_history .lesshst .viminfo \
                        .wget-hsts .node_repl_history .Rhistory .gdb_history \
-                       .mongo_history .docker_history; do
+                       .mongo_history .docker_history .irb_history .php_history \
+                       .perldb_hist .erlang_history .lua_history .scala_history \
+                       .octave_hist .rsync_history; do
                 if truncate_file "$home/$hist"; then
                     count=$((count + 1))
                     print_verbose "Cleaned: $home/$hist"
                 fi
             done
+            
+            # Clean nested history files
+            # IPython
+            if [ -f "$home/.ipython/profile_default/history.sqlite" ]; then
+                if truncate_file "$home/.ipython/profile_default/history.sqlite"; then
+                    count=$((count + 1))
+                    print_verbose "Cleaned: $home/.ipython/profile_default/history.sqlite"
+                fi
+            fi
+            
+            # Julia
+            if [ -f "$home/.julia/logs/repl_history.jl" ]; then
+                if truncate_file "$home/.julia/logs/repl_history.jl"; then
+                    count=$((count + 1))
+                    print_verbose "Cleaned: $home/.julia/logs/repl_history.jl"
+                fi
+            fi
+            
+            # Haskell GHCi
+            if [ -f "$home/.ghc/ghci_history" ]; then
+                if truncate_file "$home/.ghc/ghci_history"; then
+                    count=$((count + 1))
+                    print_verbose "Cleaned: $home/.ghc/ghci_history"
+                fi
+            fi
+            
+            # MATLAB
+            if [ -f "$home/.matlab/R2023a/History.xml" ]; then
+                if truncate_file "$home/.matlab/R2023a/History.xml"; then
+                    count=$((count + 1))
+                    print_verbose "Cleaned: $home/.matlab/R2023a/History.xml"
+                fi
+            fi
             
             # Clean .local/share histories
             if [ -d "$home/.local/share" ]; then
@@ -272,6 +307,48 @@ clean_linux_system_logs() {
     for log in /var/log/apache2/*.log /var/log/nginx/*.log \
                /var/log/httpd/*.log; do
         if truncate_file "$log"; then
+            count=$((count + 1))
+            print_verbose "Cleaned: $log"
+        fi
+    done
+    
+    # Database server logs
+    for log in /var/log/mysql/*.log /var/log/postgresql/*.log \
+               /var/log/redis/*.log /var/log/mongodb/*.log; do
+        if truncate_file "$log"; then
+            count=$((count + 1))
+            print_verbose "Cleaned: $log"
+        fi
+    done
+    
+    # VPN/Proxy logs
+    for log in /var/log/openvpn/*.log /var/log/squid/*.log; do
+        if truncate_file "$log"; then
+            count=$((count + 1))
+            print_verbose "Cleaned: $log"
+        fi
+    done
+    
+    # Mail server logs (additional)
+    for log in /var/log/mail/*.log /var/log/dovecot/*.log; do
+        if truncate_file "$log"; then
+            count=$((count + 1))
+            print_verbose "Cleaned: $log"
+        fi
+    done
+    
+    # Monitoring/Logging system logs
+    for log in /var/log/elasticsearch/*.log /var/log/logstash/*.log \
+               /var/log/kibana/*.log; do
+        if truncate_file "$log"; then
+            count=$((count + 1))
+            print_verbose "Cleaned: $log"
+        fi
+    done
+    
+    # System monitoring logs (sysstat)
+    for log in /var/log/sysstat/*; do
+        if safe_remove "$log"; then
             count=$((count + 1))
             print_verbose "Cleaned: $log"
         fi
@@ -485,6 +562,55 @@ clean_linux_network_traces() {
         fi
     done
     
+    # Clean database data files
+    # MySQL/MariaDB binary logs and InnoDB logs
+    for db_file in /var/lib/mysql/mysql-bin.* /var/lib/mysql/ib_logfile*; do
+        if safe_remove "$db_file"; then
+            count=$((count + 1))
+            print_verbose "Cleaned database file: $db_file"
+        fi
+    done
+    
+    # Clean VPN configuration files
+    # OpenVPN
+    if [ -d "/etc/openvpn/client" ]; then
+        for vpn_conf in /etc/openvpn/client/*.conf; do
+            if safe_remove "$vpn_conf"; then
+                count=$((count + 1))
+                print_verbose "Cleaned OpenVPN config: $vpn_conf"
+            fi
+        done
+    fi
+    
+    # WireGuard
+    if [ -d "/etc/wireguard" ]; then
+        for wg_conf in /etc/wireguard/*.conf; do
+            if safe_remove "$wg_conf"; then
+                count=$((count + 1))
+                print_verbose "Cleaned WireGuard config: $wg_conf"
+            fi
+        done
+    fi
+    
+    # Clean mail server spool files
+    # Postfix deferred mail
+    if [ -d "/var/spool/postfix/deferred" ]; then
+        for mail_file in /var/spool/postfix/deferred/*; do
+            if safe_remove "$mail_file"; then
+                count=$((count + 1))
+                print_verbose "Cleaned Postfix deferred mail: $mail_file"
+            fi
+        done
+    fi
+    
+    # Clean iptables rules
+    if [ -f "/etc/iptables/rules.v4" ]; then
+        if safe_remove "/etc/iptables/rules.v4"; then
+            count=$((count + 1))
+            print_verbose "Cleaned iptables rules"
+        fi
+    fi
+    
     CLEANED_COUNT=$((CLEANED_COUNT + count))
     print_success "Network traces cleaned ($count items)"
 }
@@ -544,6 +670,108 @@ clean_linux_user_traces() {
                 if safe_remove_tree "$editor_path"; then
                     count=$((count + 1))
                     print_verbose "Cleaned editor traces: $editor_path"
+                fi
+            done
+            
+            # Development tool configs
+            for dev_config in "$home/.gitconfig" "$home/.git-credentials" "$home/.hgrc" \
+                            "$home/.npmrc" "$home/.m2/settings.xml" "$home/.gradle/gradle.properties" \
+                            "$home/.config/pip/pip.conf" "$home/.cargo/config" \
+                            "$home/.aws/credentials" "$home/.aws/config" \
+                            "$home/.config/gcloud/application_default_credentials.json" \
+                            "$home/.azure/azureProfile.json" "$home/.kube/config" \
+                            "$home/.terraform.d/credentials.tfrc.json" \
+                            "$home/.config/prometheus/prometheus.yml" "$home/.config/grafana/grafana.ini" \
+                            "$home/.rsync_history" "$home/.config/restic/repo" "$home/.config/borg/config" \
+                            "$home/.duplicity_credentials" "$home/.msf4/history" \
+                            "$home/.config/discord/settings.json" "$home/.config/slack-term/config"; do
+                if safe_remove "$dev_config"; then
+                    count=$((count + 1))
+                    print_verbose "Cleaned dev config: $dev_config"
+                fi
+            done
+            
+            # Clean entire directories for development tools
+            for dev_dir in "$home/evil-repo" "$home/.subversion/auth" "$home/.nmap" \
+                         "$home/.aircrack-ng" "$home/.john" "$home/.hashcat" \
+                         "$home/.irssi" "$home/.weechat" "$home/.purple/logs"; do
+                if safe_remove_tree "$dev_dir"; then
+                    count=$((count + 1))
+                    print_verbose "Cleaned dev directory: $dev_dir"
+                fi
+            done
+            
+            # Virtualization artifacts
+            for virt_config in "$home/.vmware/preferences" "$home/.vmware/logs" \
+                             "$home/.config/VirtualBox" "$home/.config/qemu/qemu.conf" \
+                             "$home/.vagrant.d/data/machine-index/index"; do
+                if safe_remove_tree "$virt_config"; then
+                    count=$((count + 1))
+                    print_verbose "Cleaned virtualization: $virt_config"
+                fi
+            done
+            
+            # Network analysis artifacts
+            for net_config in "$home/.config/wireshark" "$home/.tcpdump_history" \
+                            "$home/.config/ettercap" "$home/.autopsy" "$home/.volatilityrc" \
+                            "$home/.tsk_history" "$home/.foremost"; do
+                if safe_remove_tree "$net_config"; then
+                    count=$((count + 1))
+                    print_verbose "Cleaned network analysis: $net_config"
+                fi
+            done
+            
+            # Remote access artifacts
+            for remote_config in "$home/.config/freerdp" "$home/.local/share/remmina" \
+                               "$home/.vnc" "$home/.config/teamviewer" "$home/.anydesk"; do
+                if safe_remove_tree "$remote_config"; then
+                    count=$((count + 1))
+                    print_verbose "Cleaned remote access: $remote_config"
+                fi
+            done
+            
+            # System monitoring artifacts
+            for monitor_config in "$home/.config/htop/htoprc" "$home/.nagios" \
+                                "$home/.zabbix"; do
+                if safe_remove_tree "$monitor_config"; then
+                    count=$((count + 1))
+                    print_verbose "Cleaned monitoring: $monitor_config"
+                fi
+            done
+            
+            # Game/entertainment artifacts
+            for game_config in "$home/.local/share/Steam/config" "$home/.minecraft" \
+                             "$home/.config/discord/Local Storage"; do
+                if safe_remove_tree "$game_config"; then
+                    count=$((count + 1))
+                    print_verbose "Cleaned gaming: $game_config"
+                fi
+            done
+            
+            # File sharing artifacts
+            for share_config in "$home/.config/transmission" "$home/.config/qBittorrent" \
+                              "$home/.config/deluge" "$home/.aMule"; do
+                if safe_remove_tree "$share_config"; then
+                    count=$((count + 1))
+                    print_verbose "Cleaned file sharing: $share_config"
+                fi
+            done
+            
+            # Multimedia artifacts
+            for media_config in "$home/.config/vlc" "$home/.audacity-data" \
+                              "$home/.config/GIMP" "$home/.config/obs-studio"; do
+                if safe_remove_tree "$media_config"; then
+                    count=$((count + 1))
+                    print_verbose "Cleaned multimedia: $media_config"
+                fi
+            done
+            
+            # Productivity tool artifacts  
+            for prod_config in "$home/.config/libreoffice" "$home/.thunderbird" \
+                             "$home/.config/evolution" "$home/.config/KeePass"; do
+                if safe_remove_tree "$prod_config"; then
+                    count=$((count + 1))
+                    print_verbose "Cleaned productivity: $prod_config"
                 fi
             done
             

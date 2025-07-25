@@ -124,6 +124,17 @@ check_empty ~/.Rhistory "R history"
 check_empty ~/.gdb_history "GDB history"
 check_empty ~/.mongo_history "MongoDB history"
 check_empty ~/.docker_history "Docker history"
+check_empty ~/.ipython/profile_default/history.sqlite "IPython history"
+check_empty ~/.irb_history "Ruby IRB history"
+check_empty ~/.php_history "PHP interactive history"
+check_empty ~/.perldb_hist "Perl debugger history"
+check_empty ~/.erlang_history "Erlang shell history"
+check_empty ~/.lua_history "Lua history"
+check_empty ~/.julia/logs/repl_history.jl "Julia REPL history"
+check_empty ~/.scala_history "Scala REPL history"
+check_empty ~/.ghc/ghci_history "Haskell GHCi history"
+check_empty ~/.octave_hist "Octave history"
+check_empty ~/.matlab/R2023a/History.xml "MATLAB history"
 
 # Check .local/share histories
 check_empty ~/.local/share/fish/fish_history "Fish local history"
@@ -490,6 +501,323 @@ check_not_exists ~/.config/Code/User/settings.json "VS Code user settings"
 # JetBrains traces
 check_empty ~/.local/share/.IntelliJIdea2023.1/system/log/idea.log "JetBrains IDE log"
 
+# Database Server Artifacts
+echo ""
+echo "[*] Checking database server artifacts..."
+
+# MySQL/MariaDB artifacts
+check_log_no_marker /var/log/mysql/error.log "10.0.0.1" "MySQL error log"
+check_log_no_marker /var/log/mysql/mysql-slow.log "SELECT * FROM users WHERE admin=1" "MySQL slow log"
+check_not_exists /var/lib/mysql/mysql-bin.000001 "MySQL binary log"
+check_not_exists /var/lib/mysql/ib_logfile0 "MySQL InnoDB log"
+
+# PostgreSQL artifacts
+check_log_no_marker /var/log/postgresql/postgresql-13-main.log "DROP TABLE sensitive_data" "PostgreSQL log"
+
+# Redis artifacts
+check_log_no_marker /var/log/redis/redis-server.log "FLUSHALL" "Redis server log"
+
+# MongoDB artifacts
+check_log_no_marker /var/log/mongodb/mongod.log "dropDatabase" "MongoDB log"
+
+# VPN/Proxy Artifacts
+echo ""
+echo "[*] Checking VPN/Proxy artifacts..."
+
+# OpenVPN artifacts
+check_log_no_marker /var/log/openvpn/openvpn.log "certificate has expired" "OpenVPN log"
+check_not_exists /etc/openvpn/client/evil-vpn.conf "OpenVPN client config"
+
+# WireGuard artifacts
+check_not_exists /etc/wireguard/wg0.conf "WireGuard config"
+
+# Squid proxy artifacts
+check_log_no_marker /var/log/squid/access.log "malicious-site.com" "Squid access log"
+
+# Mail Server Artifacts
+echo ""
+echo "[*] Checking mail server artifacts..."
+
+# Postfix artifacts
+check_log_no_marker /var/log/mail/mail.log "attacker@evil.com" "Postfix mail log"
+check_not_exists /var/spool/postfix/deferred/ABC123 "Postfix deferred mail"
+
+# Dovecot artifacts
+check_log_no_marker /var/log/dovecot/dovecot.log "10.0.0.1" "Dovecot log"
+
+# Development Tool Artifacts
+echo ""
+echo "[*] Checking development tool artifacts..."
+
+# Git artifacts
+check_empty ~/.gitconfig "Git config"
+check_not_exists ~/.git-credentials "Git credentials"
+check_not_exists ~/evil-repo/.git "Evil git repo"
+
+# SVN artifacts
+check_not_exists ~/.subversion/auth/svn.simple/abc123def456 "SVN credentials"
+
+# Mercurial artifacts
+check_empty ~/.hgrc "Mercurial config"
+
+# Maven artifacts
+check_not_exists ~/.m2/settings.xml "Maven settings"
+
+# Gradle artifacts
+check_not_exists ~/.gradle/gradle.properties "Gradle properties"
+
+# npm artifacts
+check_empty ~/.npmrc "npm config"
+
+# pip artifacts
+check_not_exists ~/.config/pip/pip.conf "pip config"
+
+# Cargo artifacts
+check_not_exists ~/.cargo/config "Cargo config"
+
+# Cloud Service Artifacts
+echo ""
+echo "[*] Checking cloud service artifacts..."
+
+# AWS CLI artifacts
+check_not_exists ~/.aws/credentials "AWS credentials"
+check_not_exists ~/.aws/config "AWS config"
+
+# Google Cloud artifacts
+check_not_exists ~/.config/gcloud/application_default_credentials.json "Google Cloud credentials"
+
+# Azure CLI artifacts
+check_not_exists ~/.azure/azureProfile.json "Azure profile"
+
+# Kubernetes artifacts
+check_not_exists ~/.kube/config "Kubernetes config"
+
+# Terraform artifacts
+check_not_exists ~/.terraform.d/credentials.tfrc.json "Terraform credentials"
+
+# Monitoring/Logging Artifacts
+echo ""
+echo "[*] Checking monitoring/logging artifacts..."
+
+# Elasticsearch artifacts
+check_log_no_marker /var/log/elasticsearch/elasticsearch.log "deleting index" "Elasticsearch log"
+
+# Logstash artifacts
+check_log_no_marker /var/log/logstash/logstash-plain.log "Failed to execute action" "Logstash log"
+
+# Kibana artifacts
+check_log_no_marker /var/log/kibana/kibana.log "statusCode\":401" "Kibana log"
+
+# Prometheus artifacts
+check_not_exists ~/.config/prometheus/prometheus.yml "Prometheus config"
+
+# Grafana artifacts
+check_not_exists ~/.config/grafana/grafana.ini "Grafana config"
+
+# Backup Tool Artifacts
+echo ""
+echo "[*] Checking backup tool artifacts..."
+
+# Rsync artifacts
+check_empty ~/.rsync_history "Rsync history"
+
+# Restic artifacts
+check_not_exists ~/.config/restic/repo "Restic config"
+
+# Borg backup artifacts
+check_not_exists ~/.config/borg/config "Borg config"
+
+# Duplicity artifacts
+check_not_exists ~/.duplicity_credentials "Duplicity credentials"
+
+# Security Tool Artifacts
+echo ""
+echo "[*] Checking security tool artifacts..."
+
+# Metasploit artifacts
+check_empty ~/.msf4/history "Metasploit history"
+
+# Nmap artifacts
+check_not_exists ~/.nmap/scan-results.xml "Nmap scan results"
+
+# Aircrack-ng artifacts
+check_not_exists ~/.aircrack-ng/captured-handshakes.txt "Aircrack-ng handshakes"
+
+# John the Ripper artifacts
+check_not_exists ~/.john/john.pot "John the Ripper pot file"
+
+# Hashcat artifacts
+check_not_exists ~/.hashcat/hashcat.potfile "Hashcat pot file"
+
+# Messaging/Chat Artifacts
+echo ""
+echo "[*] Checking messaging/chat artifacts..."
+
+# IRC artifacts
+check_empty ~/.irssi/away.log "irssi away log"
+
+# Weechat artifacts
+check_empty ~/.weechat/weechat.log "Weechat log"
+
+# Pidgin artifacts
+check_not_exists ~/.purple/logs/jabber/user@domain.com/attacker@evil.com/conversation.xml "Pidgin conversation"
+
+# Discord artifacts
+check_not_exists ~/.config/discord/settings.json "Discord settings"
+
+# Slack artifacts
+check_not_exists ~/.config/slack-term/config "Slack config"
+
+# Virtualization Artifacts
+echo ""
+echo "[*] Checking virtualization artifacts..."
+
+# VMware artifacts
+check_not_exists ~/.vmware/preferences "VMware preferences"
+check_not_exists ~/.vmware/logs/player.log "VMware player log"
+
+# VirtualBox artifacts
+check_not_exists ~/.config/VirtualBox/VirtualBox.xml "VirtualBox config"
+check_not_exists ~/.config/VirtualBox/Logs/VBox.log "VirtualBox log"
+
+# QEMU artifacts
+check_not_exists ~/.config/qemu/qemu.conf "QEMU config"
+
+# Vagrant artifacts
+check_not_exists ~/.vagrant.d/data/machine-index/index "Vagrant machine index"
+
+# Network Analysis Artifacts
+echo ""
+echo "[*] Checking network analysis artifacts..."
+
+# Wireshark artifacts
+check_not_exists ~/.config/wireshark/recent "Wireshark recent files"
+check_not_exists ~/.config/wireshark/recent_common "Wireshark recent filters"
+
+# tcpdump artifacts
+check_empty ~/.tcpdump_history "tcpdump history"
+
+# Ettercap artifacts
+check_not_exists ~/.config/ettercap/etter.conf "Ettercap config"
+
+# iptables artifacts
+check_not_exists /etc/iptables/rules.v4 "iptables rules"
+
+# Forensic Analysis Artifacts
+echo ""
+echo "[*] Checking forensic analysis artifacts..."
+
+# Autopsy artifacts
+check_not_exists ~/.autopsy/config.xml "Autopsy config"
+
+# Volatility artifacts
+check_empty ~/.volatilityrc "Volatility config"
+
+# Sleuth Kit artifacts
+check_empty ~/.tsk_history "Sleuth Kit history"
+
+# Foremost artifacts
+check_not_exists ~/.foremost/foremost.conf "Foremost config"
+
+# Remote Access Artifacts
+echo ""
+echo "[*] Checking remote access artifacts..."
+
+# RDP artifacts
+check_not_exists ~/.config/freerdp/known_hosts "FreeRDP known hosts"
+check_not_exists ~/.local/share/remmina/remmina.pref "Remmina preferences"
+
+# VNC artifacts
+check_not_exists ~/.vnc/passwd "VNC password"
+check_not_exists ~/.vnc/config "VNC config"
+
+# TeamViewer artifacts
+check_not_exists ~/.config/teamviewer/client.conf "TeamViewer config"
+
+# AnyDesk artifacts
+check_not_exists ~/.anydesk/user.conf "AnyDesk config"
+
+# System Monitoring Artifacts
+echo ""
+echo "[*] Checking system monitoring artifacts..."
+
+# htop artifacts
+check_not_exists ~/.config/htop/htoprc "htop config"
+
+# System monitoring logs
+check_log_no_marker /var/log/sysstat/sa01 "suspicious process" "Sysstat log"
+if [ -f /var/log/sysstat/sa$(date +%d) ]; then
+    check_not_exists /var/log/sysstat/sa$(date +%d) "Sysstat data"
+fi
+
+# Nagios artifacts
+check_not_exists ~/.nagios/nagios.cfg "Nagios config"
+
+# Zabbix artifacts
+check_not_exists ~/.zabbix/zabbix_agentd.conf "Zabbix agent config"
+
+# Game/Entertainment Artifacts
+echo ""
+echo "[*] Checking game/entertainment artifacts..."
+
+# Steam artifacts
+check_not_exists ~/.local/share/Steam/config/loginusers.vdf "Steam login history"
+
+# Minecraft artifacts
+check_not_exists ~/.minecraft/launcher_profiles.json "Minecraft launcher profiles"
+
+# Discord gaming
+check_not_exists ~/.config/discord/Local\ Storage/leveldb/000001.log "Discord leveldb"
+
+# File Sharing Artifacts
+echo ""
+echo "[*] Checking file sharing artifacts..."
+
+# Transmission artifacts
+check_not_exists ~/.config/transmission/settings.json "Transmission settings"
+
+# qBittorrent artifacts
+check_not_exists ~/.config/qBittorrent/qBittorrent.ini "qBittorrent config"
+
+# Deluge artifacts
+check_not_exists ~/.config/deluge/core.conf "Deluge config"
+
+# aMule artifacts
+check_not_exists ~/.aMule/amule.conf "aMule config"
+
+# Multimedia Artifacts
+echo ""
+echo "[*] Checking multimedia artifacts..."
+
+# VLC artifacts
+check_not_exists ~/.config/vlc/vlc-qt-interface.conf "VLC config"
+
+# Audacity artifacts
+check_not_exists ~/.audacity-data/audacity.cfg "Audacity config"
+
+# GIMP artifacts
+check_not_exists ~/.config/GIMP/2.10/sessionrc "GIMP session"
+check_not_exists ~/.config/GIMP/2.10/recentrc "GIMP recent files"
+
+# OBS Studio artifacts
+check_not_exists ~/.config/obs-studio/global.ini "OBS Studio config"
+
+# Productivity Tool Artifacts
+echo ""
+echo "[*] Checking productivity tool artifacts..."
+
+# LibreOffice artifacts
+check_not_exists ~/.config/libreoffice/4/user/registrymodifications.xcu "LibreOffice registry"
+
+# Thunderbird artifacts
+check_not_exists ~/.thunderbird/profile.default/prefs.js "Thunderbird preferences"
+
+# Evolution mail artifacts
+check_not_exists ~/.config/evolution/sources/sources.db "Evolution sources"
+
+# KeePass artifacts
+check_not_exists ~/.config/KeePass/KeePass.config.xml "KeePass config"
+
 # Extended Verification Summary
 echo ""
 echo "[*] Extended verification complete..."
@@ -515,6 +843,18 @@ EXTENDED_ARTIFACTS=0
 
 # Print artifacts
 [ -f /var/spool/cups/c00001 ] && EXTENDED_ARTIFACTS=$((EXTENDED_ARTIFACTS + 1))
+
+# Check all the new artifacts
+[ -f ~/.vmware/preferences ] && EXTENDED_ARTIFACTS=$((EXTENDED_ARTIFACTS + 1))
+[ -f ~/.config/VirtualBox/VirtualBox.xml ] && EXTENDED_ARTIFACTS=$((EXTENDED_ARTIFACTS + 1))
+[ -f ~/.config/wireshark/recent ] && EXTENDED_ARTIFACTS=$((EXTENDED_ARTIFACTS + 1))
+[ -f ~/.autopsy/config.xml ] && EXTENDED_ARTIFACTS=$((EXTENDED_ARTIFACTS + 1))
+[ -f ~/.config/freerdp/known_hosts ] && EXTENDED_ARTIFACTS=$((EXTENDED_ARTIFACTS + 1))
+[ -f ~/.config/htop/htoprc ] && EXTENDED_ARTIFACTS=$((EXTENDED_ARTIFACTS + 1))
+[ -f ~/.local/share/Steam/config/loginusers.vdf ] && EXTENDED_ARTIFACTS=$((EXTENDED_ARTIFACTS + 1))
+[ -f ~/.config/transmission/settings.json ] && EXTENDED_ARTIFACTS=$((EXTENDED_ARTIFACTS + 1))
+[ -f ~/.config/vlc/vlc-qt-interface.conf ] && EXTENDED_ARTIFACTS=$((EXTENDED_ARTIFACTS + 1))
+[ -f ~/.config/libreoffice/4/user/registrymodifications.xcu ] && EXTENDED_ARTIFACTS=$((EXTENDED_ARTIFACTS + 1))
 
 if [ "$EXTENDED_ARTIFACTS" -eq 0 ]; then
     pass "Extended modules verification - All artifacts cleaned"

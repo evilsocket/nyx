@@ -22,60 +22,16 @@ docker-compose down 2>/dev/null || true
 echo "[*] Building Docker image..."
 docker-compose build
 
-# Start the container
+# Start the container and run tests
 echo ""
-echo "[*] Starting test container..."
-docker-compose up -d
+echo "[*] Starting test container and running tests..."
 
-# Wait for container to be ready
-echo "[*] Waiting for container to be ready..."
-sleep 2
+# Run the container with the entrypoint script
+# The container will execute the test sequence and exit with appropriate code
+EXIT_CODE=0
+docker-compose run --rm nyx-test || EXIT_CODE=$?
 
-# Run the test sequence
-echo ""
-echo "[*] Running test sequence..."
-docker exec nyx-test bash -c '
-    set -e
-    
-    echo "================================"
-    echo "Phase 1: Creating Artifacts"
-    echo "================================"
-    echo ""
-    
-    # Switch to testuser for artifact creation
-    su - testuser -c "create-artifacts.sh"
-    
-    echo ""
-    echo "================================"
-    echo "Phase 2: Running Cleaner"
-    echo "================================"
-    echo ""
-    
-    # Run cleaner as root with force flag
-    /usr/local/bin/nyx.sh --force
-    
-    echo ""
-    echo "================================"
-    echo "Phase 3: Verifying Cleanup"
-    echo "================================"
-    echo ""
-    
-    # Verify cleanup as testuser
-    su - testuser -c "verify-cleanup.sh"
-    
-    echo ""
-    echo "================================"
-    echo "Test Complete!"
-    echo "================================"
-'
-
-# Capture exit code
-EXIT_CODE=$?
-
-# Clean up
-echo ""
-echo "[*] Cleaning up..."
-docker-compose down
+# No need for manual cleanup as --rm removes the container
 
 echo ""
 if [ $EXIT_CODE -eq 0 ]; then

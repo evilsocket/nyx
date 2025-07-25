@@ -32,6 +32,8 @@ RUN apt-get update && apt-get install -y \
     zeitgeist-core \
     network-manager \
     xdg-utils \
+    netcat \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Create test user
@@ -44,6 +46,7 @@ RUN useradd -m -s /bin/bash testuser && \
 COPY nyx.sh /usr/local/bin/nyx.sh
 COPY tests/create-artifacts.sh /usr/local/bin/
 COPY tests/verify-cleanup.sh /usr/local/bin/
+COPY tests/entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/*.sh
 
 # Create directories for logs
