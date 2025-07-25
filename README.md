@@ -33,11 +33,13 @@ The following table details which artifacts are cleaned by each module:
 | **macOS** | `unified` | Unified logs (10.12+), diagnostics, log archives |
 | **macOS** | `fileevents` | FSEvents, quarantine databases |
 | **macOS** | `usage` | KnowledgeC database, Notification Center, recent items |
-| **Windows** | `events` | Event logs (Security, System, Application, Sysmon, WinRM) |
-| **Windows** | `history` | PowerShell/CMD history, prefetch, jump lists, recent documents |
-| **Windows** | `registry` | Registry MRUs, USB history, BAM/DAM, ShellBags, UserAssist |
-| **Windows** | `filesystem` | USN journal, recycle bin, thumbcache, shortcuts, index files |
-| **Windows** | `temp` | Temp files, DNS cache, shadow copies, WER archives, crash dumps |
+| **Windows** | `events` | Event logs (Security, System, Application, Sysmon, WinRM, PowerShell/Operational, AppLocker, AMSI) |
+| **Windows** | `history` | PowerShell/CMD history, prefetch, jump lists, recent documents, Windows Timeline, Search history, IE/Edge history |
+| **Windows** | `registry` | Registry MRUs, USB history, BAM/DAM, ShellBags, UserAssist, Terminal Server Client, Media Player, Office MRUs |
+| **Windows** | `filesystem` | USN journal, recycle bin, thumbcache, shortcuts, index files, SRUM database, notification history |
+| **Windows** | `temp` | Temp files, DNS cache, shadow copies, WER archives, crash dumps, Cortana history, Office telemetry, OneDrive/Teams logs |
+| **Windows** | `security` | EDR/AV logs (CrowdStrike Falcon, SentinelOne, Carbon Black, McAfee, Symantec), Windows Defender ATP, Firewall logs, WMI activity, BitLocker keys, Group Policy cache, authentication cache, Hyper-V/WSL/Docker logs, FTK Imager artifacts |
+| **Windows** | `advanced` | Certificates, scheduled tasks, services, wireless profiles, VPN connections, Chrome extensions, cryptographic data, TPM logs, Windows Update logs, Push Notifications, Outlook search, WSA logs, Xbox Game Bar |
 
 ## Quick Start
 

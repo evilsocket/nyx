@@ -712,8 +712,313 @@ function Clean-WindowsTempFiles {
         Print-Verbose 'Cleaned Cortana history'
     }
     
+    # Windows Defender ATP cache
+    if (-not $DryRun) {
+        $atpPath = 'C:\ProgramData\Microsoft\Windows Defender Advanced Threat Protection\Cache\*'
+        Remove-Item -Path $atpPath -Recurse -Force -ErrorAction SilentlyContinue
+        $count++
+        Print-Verbose 'Cleaned Windows Defender ATP cache'
+    }
+    
+    # Windows Firewall logs
+    if (-not $DryRun) {
+        $fwLogPath = 'C:\Windows\System32\LogFiles\Firewall\*.log'
+        Remove-Item -Path $fwLogPath -Force -ErrorAction SilentlyContinue
+        $count++
+        Print-Verbose 'Cleaned Windows Firewall logs'
+    }
+    
+    # WMI Activity logs
+    if (-not $DryRun) {
+        $wmiLogPath = "$env:WINDIR\System32\wbem\Logs\*.log"
+        Remove-Item -Path $wmiLogPath -Force -ErrorAction SilentlyContinue
+        $count++
+        Print-Verbose 'Cleaned WMI activity logs'
+    }
+    
+    # BitLocker recovery keys in temp
+    if (-not $DryRun) {
+        $bitlockerPath = "$env:TEMP\BitLockerRecoveryKeys\*"
+        Remove-Item -Path $bitlockerPath -Recurse -Force -ErrorAction SilentlyContinue
+        $count++
+        Print-Verbose 'Cleaned BitLocker recovery keys from temp'
+    }
+    
+    # Group Policy cache
+    if (-not $DryRun) {
+        $gpPath = "$env:WINDIR\System32\GroupPolicy\DataStore\*"
+        Remove-Item -Path $gpPath -Recurse -Force -ErrorAction SilentlyContinue
+        $count++
+        Print-Verbose 'Cleaned Group Policy cache'
+    }
+    
+    # Authentication cache
+    if (-not $DryRun) {
+        $authPath = "$env:WINDIR\System32\config\systemprofile\AppData\Local\Microsoft\Windows\SchCache\*"
+        Remove-Item -Path $authPath -Force -ErrorAction SilentlyContinue
+        $count++
+        Print-Verbose 'Cleaned authentication cache'
+    }
+    
+    # Hibernation traces
+    if (-not $DryRun) {
+        $hibPath = "$env:TEMP\HibernationTraces\*"
+        Remove-Item -Path $hibPath -Recurse -Force -ErrorAction SilentlyContinue
+        $count++
+        Print-Verbose 'Cleaned hibernation traces'
+    }
+    
+    # Office telemetry
+    if (-not $DryRun) {
+        $officeTelPath = "$env:LOCALAPPDATA\Microsoft\Office\*\Telemetry\*"
+        Remove-Item -Path $officeTelPath -Recurse -Force -ErrorAction SilentlyContinue
+        $count++
+        Print-Verbose 'Cleaned Office telemetry'
+    }
+    
+    # OneDrive logs
+    if (-not $DryRun) {
+        $onedrivePath = "$env:LOCALAPPDATA\Microsoft\OneDrive\logs\*"
+        Remove-Item -Path $onedrivePath -Force -ErrorAction SilentlyContinue
+        $count++
+        Print-Verbose 'Cleaned OneDrive logs'
+    }
+    
+    # Teams logs
+    if (-not $DryRun) {
+        $teamsPath = "$env:APPDATA\Microsoft\Teams\logs.txt"
+        if (Test-Path $teamsPath) {
+            Clear-Content -Path $teamsPath -Force -ErrorAction SilentlyContinue
+        }
+        $count++
+        Print-Verbose 'Cleaned Teams logs'
+    }
+    
+    # Outlook search history
+    if (-not $DryRun) {
+        $outlookPath = "$env:LOCALAPPDATA\Microsoft\Outlook\*.dat"
+        Remove-Item -Path $outlookPath -Force -ErrorAction SilentlyContinue
+        $count++
+        Print-Verbose 'Cleaned Outlook search history'
+    }
+    
+    # WSA logs
+    if (-not $DryRun) {
+        $wsaPath = "$env:LOCALAPPDATA\Packages\MicrosoftCorporationII.WindowsSubsystemForAndroid_*\LocalState\*.log"
+        Remove-Item -Path $wsaPath -Force -ErrorAction SilentlyContinue
+        $count++
+        Print-Verbose 'Cleaned Windows Subsystem for Android logs'
+    }
+    
+    # Xbox Game Bar
+    if (-not $DryRun) {
+        $xboxPath = "$env:LOCALAPPDATA\Packages\Microsoft.XboxGamingOverlay_*\LocalState\*.log"
+        Remove-Item -Path $xboxPath -Force -ErrorAction SilentlyContinue
+        $count++
+        Print-Verbose 'Cleaned Xbox Game Bar logs'
+    }
+    
     $script:CLEANED_COUNT += $count
     $msg = 'Temporary files cleaned (' + $count + ' items)'
+    Print-Success $msg
+}
+
+# Module: Security Products and EDR
+function Clean-SecurityProducts {
+    Print-Info 'Cleaning security product artifacts...'
+    $count = 0
+    
+    # McAfee logs
+    if (-not $DryRun) {
+        $mcafeePath = 'C:\ProgramData\McAfee\Endpoint Security\Logs\*'
+        Remove-Item -Path $mcafeePath -Recurse -Force -ErrorAction SilentlyContinue
+        $count++
+        Print-Verbose 'Cleaned McAfee logs'
+    }
+    
+    # Symantec Endpoint Protection logs
+    if (-not $DryRun) {
+        $sepPath = 'C:\ProgramData\Symantec\Symantec Endpoint Protection\CurrentVersion\Data\Logs\*'
+        Remove-Item -Path $sepPath -Recurse -Force -ErrorAction SilentlyContinue
+        $count++
+        Print-Verbose 'Cleaned Symantec Endpoint Protection logs'
+    }
+    
+    # CrowdStrike Falcon logs
+    if (-not $DryRun) {
+        $csPath = 'C:\ProgramData\CrowdStrike\Logs\*'
+        Remove-Item -Path $csPath -Force -ErrorAction SilentlyContinue
+        $count++
+        Print-Verbose 'Cleaned CrowdStrike Falcon logs'
+    }
+    
+    # SentinelOne logs
+    if (-not $DryRun) {
+        $s1Path = 'C:\ProgramData\Sentinel\Logs\*'
+        Remove-Item -Path $s1Path -Force -ErrorAction SilentlyContinue
+        $count++
+        Print-Verbose 'Cleaned SentinelOne logs'
+    }
+    
+    # Carbon Black logs
+    if (-not $DryRun) {
+        $cbPath = 'C:\ProgramData\CarbonBlack\Logs\*'
+        Remove-Item -Path $cbPath -Force -ErrorAction SilentlyContinue
+        $count++
+        Print-Verbose 'Cleaned Carbon Black logs'
+    }
+    
+    # FTK Imager artifacts
+    if (-not $DryRun) {
+        $ftkPath = "$env:APPDATA\AccessData\FTK Imager\*"
+        Remove-Item -Path $ftkPath -Recurse -Force -ErrorAction SilentlyContinue
+        $count++
+        Print-Verbose 'Cleaned FTK Imager artifacts'
+    }
+    
+    # Hyper-V logs
+    if (-not $DryRun) {
+        $hvPath = 'C:\ProgramData\Microsoft\Windows\Hyper-V\Virtual Machines logs\*'
+        Remove-Item -Path $hvPath -Force -ErrorAction SilentlyContinue
+        $count++
+        Print-Verbose 'Cleaned Hyper-V logs'
+    }
+    
+    # WSL logs
+    if (-not $DryRun) {
+        $wslPath = "$env:LOCALAPPDATA\Packages\CanonicalGroupLimited.Ubuntu_*\LocalState\*.log"
+        Remove-Item -Path $wslPath -Force -ErrorAction SilentlyContinue
+        $count++
+        Print-Verbose 'Cleaned WSL logs'
+    }
+    
+    # Docker Desktop logs
+    if (-not $DryRun) {
+        $dockerPath = "$env:APPDATA\Docker\log\*"
+        Remove-Item -Path $dockerPath -Force -ErrorAction SilentlyContinue
+        $count++
+        Print-Verbose 'Cleaned Docker Desktop logs'
+    }
+    
+    $script:CLEANED_COUNT += $count
+    $msg = 'Security product artifacts cleaned (' + $count + ' items)'
+    Print-Success $msg
+}
+
+# Module: Advanced Security Traces
+function Clean-AdvancedSecurity {
+    Print-Info 'Cleaning advanced security traces...'
+    $count = 0
+    
+    # Remove test certificates
+    if (-not $DryRun) {
+        try {
+            $certs = Get-ChildItem -Path Cert:\CurrentUser\My -ErrorAction SilentlyContinue | Where-Object { $_.Subject -like "*NYX-TEST*" }
+            foreach ($cert in $certs) {
+                Remove-Item -Path $cert.PSPath -Force -ErrorAction SilentlyContinue
+                $count++
+            }
+        } catch {
+            $script:FAILED_COUNT++
+            Print-Verbose 'Failed to clean test certificates'
+        }
+    }
+    
+    # Remove scheduled tasks
+    if (-not $DryRun) {
+        try {
+            $tasks = Get-ScheduledTask | Where-Object { $_.TaskName -like "*NYX-TEST*" }
+            foreach ($task in $tasks) {
+                Unregister-ScheduledTask -TaskName $task.TaskName -Confirm:$false -ErrorAction SilentlyContinue
+                $count++
+            }
+        } catch {
+            $script:FAILED_COUNT++
+            Print-Verbose 'Failed to clean scheduled tasks'
+        }
+    }
+    
+    # Remove test services
+    if (-not $DryRun) {
+        try {
+            $services = Get-Service | Where-Object { $_.Name -like "*NYX-TEST*" }
+            foreach ($service in $services) {
+                Stop-Service -Name $service.Name -Force -ErrorAction SilentlyContinue
+                & sc.exe delete $service.Name 2>$null
+                $count++
+            }
+        } catch {
+            $script:FAILED_COUNT++
+            Print-Verbose 'Failed to clean test services'
+        }
+    }
+    
+    # Remove wireless profiles
+    if (-not $DryRun) {
+        try {
+            $profiles = netsh wlan show profiles 2>$null | Select-String "NYX-TEST"
+            foreach ($profile in $profiles) {
+                $profileName = ($profile -split ':')[1].Trim()
+                netsh wlan delete profile name="$profileName" 2>$null
+                $count++
+            }
+        } catch {
+            $script:FAILED_COUNT++
+            Print-Verbose 'Failed to clean wireless profiles'
+        }
+    }
+    
+    # Remove VPN connections
+    if (-not $DryRun) {
+        try {
+            $vpns = Get-VpnConnection -ErrorAction SilentlyContinue | Where-Object { $_.Name -like "*NYX-TEST*" }
+            foreach ($vpn in $vpns) {
+                Remove-VpnConnection -Name $vpn.Name -Force -ErrorAction SilentlyContinue
+                $count++
+            }
+        } catch {
+            $script:FAILED_COUNT++
+            Print-Verbose 'Failed to clean VPN connections'
+        }
+    }
+    
+    # Chrome extensions
+    if (-not $DryRun) {
+        $chromePath = "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\Extensions\nyxtest*"
+        Remove-Item -Path $chromePath -Recurse -Force -ErrorAction SilentlyContinue
+        $count++
+        Print-Verbose 'Cleaned Chrome extensions'
+    }
+    
+    # Cryptographic provider data
+    if (-not $DryRun) {
+        $cryptoPath = "$env:APPDATA\Microsoft\Crypto\RSA\*nyx*"
+        Remove-Item -Path $cryptoPath -Force -ErrorAction SilentlyContinue
+        $count++
+        Print-Verbose 'Cleaned cryptographic provider data'
+    }
+    
+    # Windows Update logs cleanup
+    if (-not $DryRun) {
+        $wuLogPath = "$env:WINDIR\SoftwareDistribution\ReportingEvents.log"
+        if (Test-Path $wuLogPath) {
+            # Remove lines containing NYX-WINDOWS-UPDATE-TEST
+            $content = Get-Content $wuLogPath -ErrorAction SilentlyContinue | Where-Object { $_ -notmatch "NYX-WINDOWS-UPDATE-TEST" }
+            $content | Set-Content $wuLogPath -Force -ErrorAction SilentlyContinue
+            $count++
+        }
+    }
+    
+    # Windows Push Notifications
+    if (-not $DryRun) {
+        $wpnPath = "$env:LOCALAPPDATA\Microsoft\Windows\Notifications\*nyx*"
+        Remove-Item -Path $wpnPath -Force -ErrorAction SilentlyContinue
+        $count++
+        Print-Verbose 'Cleaned Windows Push Notifications'
+    }
+    
+    $script:CLEANED_COUNT += $count
+    $msg = 'Advanced security traces cleaned (' + $count + ' items)'
     Print-Success $msg
 }
 
@@ -727,7 +1032,7 @@ function Invoke-Cleaners {
     
     # Early exit on unknown module names
     if ($moduleList.Count -gt 0) {
-        $valid = @('events','history','registry','filesystem','temp')
+        $valid = @('events','history','registry','filesystem','temp','security','advanced')
         $bad = $moduleList | Where-Object { $_ -notin $valid }
         if ($bad) { 
             Print-Error "Unknown module(s): $($bad -join ',')"
@@ -738,7 +1043,7 @@ function Invoke-Cleaners {
     # Determine which modules to run
     $modulesToRun = @()
     if ($moduleList.Count -eq 0) {
-        $modulesToRun = @('events','history','registry','filesystem','temp')
+        $modulesToRun = @('events','history','registry','filesystem','temp','security','advanced')
     } else {
         $modulesToRun = $moduleList
     }
@@ -759,6 +1064,8 @@ function Invoke-Cleaners {
             'registry' { Clean-WindowsRegistry }
             'filesystem' { Clean-WindowsFilesystemTraces }
             'temp' { Clean-WindowsTempFiles }
+            'security' { Clean-SecurityProducts }
+            'advanced' { Clean-AdvancedSecurity }
         }
     }
     
@@ -770,11 +1077,13 @@ function Invoke-Cleaners {
 function Show-Modules {
     Write-Host 'Available cleaning modules:'
     Write-Host ""
-    Write-Host '  events     - Windows Event Logs (including Sysmon, WinRM)'
+    Write-Host '  events     - Windows Event Logs (including Sysmon, WinRM, Security)'
     Write-Host '  history    - PowerShell/CMD history, prefetch, jump lists'
-    Write-Host '  registry   - Registry MRUs, USB history, BAM'
-    Write-Host '  filesystem - USN journal, recycle bin, thumbcache'
-    Write-Host '  temp       - Temporary files, DNS cache, shadow copies'
+    Write-Host '  registry   - Registry MRUs, USB history, BAM, ShimCache'
+    Write-Host '  filesystem - USN journal, recycle bin, thumbcache, SRUM'
+    Write-Host '  temp       - Temporary files, DNS cache, shadow copies, WER'
+    Write-Host '  security   - EDR/AV logs (CrowdStrike, SentinelOne, etc.)'
+    Write-Host '  advanced   - Certificates, tasks, services, VPN/WiFi profiles'
     Write-Host ""
 }
 
