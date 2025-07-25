@@ -6,6 +6,12 @@ Nyx (goddess of the night in Greek mythology) is a self-contained script for cle
 
 <p align="center">
   <img alt="Nyx" src="https://raw.githubusercontent.com/evilsocket/nyx/main/logo.png" height="250" />
+
+  <small>Join the project community on our server!</small>
+  <br/><br/>
+  <a href="https://discord.gg/btZpkp45gQ" target="_blank" title="Join our community!">
+    <img src="https://dcbadge.limes.pink/api/server/https://discord.gg/btZpkp45gQ"/>
+  </a>  
 </p>
 
 ## Features
