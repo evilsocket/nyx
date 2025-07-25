@@ -4,7 +4,9 @@ Run from an elevated PowerShell window
 #>
 
 # 1. PowerShell history
-$hist = "$env:APPDATA\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt"
+$histDir = "$env:APPDATA\Microsoft\Windows\PowerShell\PSReadLine"
+New-Item -Path $histDir -ItemType Directory -Force | Out-Null
+$hist = "$histDir\ConsoleHost_history.txt"
 @('whoami','Get-Date','echo NYX-WIN-TEST') | Out-File -Append $hist
 
 # 2. Jump-list shortcut
@@ -20,11 +22,15 @@ Start-Sleep 2
 Stop-Process -Name notepad -ErrorAction SilentlyContinue
 
 # 4. Event-log marker
-if (-not (Get-EventLog -LogName Application -Source "NYXTEST" -ErrorAction SilentlyContinue)) {
-    New-EventLog -LogName Application -Source "NYXTEST"
+try {
+    if (-not (Get-EventLog -LogName Application -Source "NYXTEST" -ErrorAction SilentlyContinue)) {
+        New-EventLog -LogName Application -Source "NYXTEST" -ErrorAction SilentlyContinue
+    }
+    Write-EventLog -LogName Application -Source NYXTEST -EventId 4242 `
+                   -Message "NYX-WIN-TEST EventLog entry" -ErrorAction SilentlyContinue
+} catch {
+    Write-Host "Note: Could not write to event log (requires admin)" -ForegroundColor Yellow
 }
-Write-EventLog -LogName Application -Source NYXTEST -EventId 4242 `
-               -Message "NYX-WIN-TEST EventLog entry"
 
 # 5. Trigger a WER crash
 try { 1/0 } catch { }
@@ -97,10 +103,14 @@ New-Item -Path $notifDir -ItemType Directory -Force | Out-Null
 'NYX-NOTIFICATION-TEST' | Set-Content "$notifDir\nyx-notif-test.txt"
 
 # 19. Security Event Logs - Create specific security events
-Write-EventLog -LogName Security -Source "Microsoft-Windows-Security-Auditing" -EventId 4624 `
-               -Message "NYX-SECURITY-TEST: Successful logon" -EntryType SuccessAudit -ErrorAction SilentlyContinue
-Write-EventLog -LogName Security -Source "Microsoft-Windows-Security-Auditing" -EventId 4625 `
-               -Message "NYX-SECURITY-TEST: Failed logon attempt" -EntryType FailureAudit -ErrorAction SilentlyContinue
+try {
+    Write-EventLog -LogName Security -Source "Microsoft-Windows-Security-Auditing" -EventId 4624 `
+                   -Message "NYX-SECURITY-TEST: Successful logon" -EntryType SuccessAudit -ErrorAction SilentlyContinue
+    Write-EventLog -LogName Security -Source "Microsoft-Windows-Security-Auditing" -EventId 4625 `
+                   -Message "NYX-SECURITY-TEST: Failed logon attempt" -EntryType FailureAudit -ErrorAction SilentlyContinue
+} catch {
+    Write-Host "Note: Could not write to security log (requires admin)" -ForegroundColor Yellow
+}
 
 # 20. Sysmon logs (if installed)
 if (Get-WinEvent -ListLog "Microsoft-Windows-Sysmon/Operational" -ErrorAction SilentlyContinue) {
@@ -130,9 +140,13 @@ New-Item -Path $wmiDir -ItemType Directory -Force | Out-Null
 'NYX-WMI-TEST' | Set-Content "$wmiDir\wmi-activity.log" -ErrorAction SilentlyContinue
 
 # 25. USB device history
-$usbPath = 'HKLM:\SYSTEM\CurrentControlSet\Enum\USBSTOR\Disk&Ven_NYX&Prod_TEST&Rev_1.0'
-New-Item -Path $usbPath -Force | Out-Null
-Set-ItemProperty -Path $usbPath -Name 'FriendlyName' -Value 'NYX-USB-TEST-DEVICE' -Force
+try {
+    $usbPath = 'HKLM:\SYSTEM\CurrentControlSet\Enum\USBSTOR\Disk&Ven_NYX&Prod_TEST&Rev_1.0'
+    New-Item -Path $usbPath -Force -ErrorAction SilentlyContinue | Out-Null
+    Set-ItemProperty -Path $usbPath -Name 'FriendlyName' -Value 'NYX-USB-TEST-DEVICE' -Force -ErrorAction SilentlyContinue
+} catch {
+    Write-Host "Note: Could not create USB device history (requires admin)" -ForegroundColor Yellow
+}
 
 # 26. BitLocker recovery keys
 $bitlockerDir = "$env:TEMP\BitLockerRecoveryKeys"
@@ -149,15 +163,23 @@ New-Item -Path $gpDir -ItemType Directory -Force | Out-Null
 'NYX-GROUP-POLICY-TEST' | Set-Content "$gpDir\nyx-gp-test.xml" -ErrorAction SilentlyContinue
 
 # 29. Scheduled Tasks history
-$taskName = "NYX-TEST-TASK"
-$action = New-ScheduledTaskAction -Execute "notepad.exe"
-$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(5)
-Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Force | Out-Null
+try {
+    $taskName = "NYX-TEST-TASK"
+    $action = New-ScheduledTaskAction -Execute "notepad.exe"
+    $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(5)
+    Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Force -ErrorAction SilentlyContinue | Out-Null
+} catch {
+    Write-Host "Note: Could not create scheduled task (requires admin)" -ForegroundColor Yellow
+}
 
 # 30. Service installation logs
-$serviceName = "NYX-TEST-SERVICE"
-New-Service -Name $serviceName -BinaryPathName "C:\Windows\System32\svchost.exe" `
-            -DisplayName "NYX Test Service" -Description "NYX Test Service" -ErrorAction SilentlyContinue
+try {
+    $serviceName = "NYX-TEST-SERVICE"
+    New-Service -Name $serviceName -BinaryPathName "C:\Windows\System32\svchost.exe" `
+                -DisplayName "NYX Test Service" -Description "NYX Test Service" -ErrorAction SilentlyContinue
+} catch {
+    Write-Host "Note: Could not create service (requires admin)" -ForegroundColor Yellow
+}
 
 # 31. Authentication logs (NTLM/Kerberos)
 $authDir = "$env:WINDIR\System32\config\systemprofile\AppData\Local\Microsoft\Windows\SchCache"
